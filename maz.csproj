@@ -33,11 +33,13 @@
     <TypeScriptCompile Include="src\main\ts\app.ts" />
     <TypeScriptCompile Include="src\main\ts\Intro\introStart.ts" />
     <TypeScriptCompile Include="src\main\ts\Intro\IIntroState.ts" />
+    <TypeScriptCompile Include="src\main\ts\Intro\IntroStateKey.ts" />
     <TypeScriptCompile Include="src\main\ts\Intro\introStop.ts" />
     <TypeScriptCompile Include="src\main\ts\IRecord.ts" />
     <TypeScriptCompile Include="src\main\ts\IRecordHandlerFunction.ts" />
     <TypeScriptCompile Include="src\main\ts\IStateCompleteCallback.ts" />
     <TypeScriptCompile Include="src\main\ts\IStateStopFunction.ts" />
+    <TypeScriptCompile Include="src\main\ts\Level\ILevelSelectStateKey.ts" />
     <TypeScriptCompile Include="src\main\ts\recordHandlerDelegateFactory.ts" />
     <TypeScriptCompile Include="src\main\ts\IStateStartFunction.ts" />
     <TypeScriptCompile Include="src\main\ts\State.ts" />
