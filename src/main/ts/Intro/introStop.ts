@@ -3,10 +3,9 @@
 export namespace Intro {
 
     export function introStop(state: I.IIntroState, e: Element) {
-        // TODO hide the intro screen
-
-        // TODO unlisten for any event handlers
-
+        // hide the intro screen
+        var intro = document.getElementById('intro');
+        intro.setAttribute('class', 'hidden');
     }
 
 }
