@@ -1,20 +1,11 @@
-﻿import {IStateCompleteCallback} from 'IStateCompleteCallback'
-import {IRecord} from 'IRecord'
-import {State, STATE_INTRO} from 'State'
-import {StateKey, STATE_KEY_INTRO, STATE_KEY_LEVEL} from 'StateKey'
-import {Intro as IntroStart} from 'Intro/introStart'
-import {Intro as IntroStop} from 'Intro/introStop'
-import {recordHandlerDelegateFactory } from 'recordHandlerDelegateFactory'
-import {IRecordHandlerFunction} from 'IRecordHandlerFunction'
-
-window.onload = () => {
+﻿window.onload = function() {
     var startHandlers: { [_: number]: IRecordHandlerFunction<StateKey, void> } = {};
-    startHandlers[STATE_KEY_INTRO] = IntroStart.introStart;
+    startHandlers[STATE_KEY_INTRO] = introStart;
     //startHandlers[STATE_KEY_LEVEL] = L.levelStart;
     var startHandler = recordHandlerDelegateFactory(startHandlers);
 
     var stopHandlers: { [_: number]: IRecordHandlerFunction<State, void> } = {};
-    stopHandlers[STATE_INTRO] = IntroStop.introStop;
+    stopHandlers[STATE_INTRO] = introStop;
     var stopHandler = recordHandlerDelegateFactory(stopHandlers);
 
     var e = document.getElementById('content');
@@ -25,5 +16,5 @@ window.onload = () => {
         }
         currentState = startHandler(nextState, e, callback);
     };
-    IntroStart.introStart(null, e, callback);
+    introStart(null, e, callback);
 };

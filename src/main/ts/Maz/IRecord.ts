@@ -1,4 +1,4 @@
-﻿export interface IRecord<V> {
+﻿interface IRecord<V> {
 
     type: number;
     value?: V;

@@ -1,0 +1,1 @@
+﻿type IntroStateKey = void;

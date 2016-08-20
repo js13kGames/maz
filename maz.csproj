@@ -27,23 +27,25 @@
     <Content Include="index.html" />
     <Content Include="libbuild\closure-compiler\build\compiler.jar" />
     <Content Include="lib\analytics.js" />
+    <Content Include="lib\require-2.2.0.js" />
+    <Content Include="lib\require-2.2.0.min.js" />
     <Content Include="web.config" />
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="src\main\ts\app.ts" />
-    <TypeScriptCompile Include="src\main\ts\Intro\introStart.ts" />
-    <TypeScriptCompile Include="src\main\ts\Intro\IIntroState.ts" />
-    <TypeScriptCompile Include="src\main\ts\Intro\IntroStateKey.ts" />
-    <TypeScriptCompile Include="src\main\ts\Intro\introStop.ts" />
-    <TypeScriptCompile Include="src\main\ts\IRecord.ts" />
-    <TypeScriptCompile Include="src\main\ts\IRecordHandlerFunction.ts" />
-    <TypeScriptCompile Include="src\main\ts\IStateCompleteCallback.ts" />
-    <TypeScriptCompile Include="src\main\ts\IStateStopFunction.ts" />
-    <TypeScriptCompile Include="src\main\ts\Level\ILevelSelectStateKey.ts" />
-    <TypeScriptCompile Include="src\main\ts\recordHandlerDelegateFactory.ts" />
-    <TypeScriptCompile Include="src\main\ts\IStateStartFunction.ts" />
-    <TypeScriptCompile Include="src\main\ts\State.ts" />
-    <TypeScriptCompile Include="src\main\ts\StateKey.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Intro\introStart.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Intro\IIntroState.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Intro\IntroStateKey.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Intro\introStop.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\IRecord.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\IRecordHandlerFunction.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\IStateCompleteCallback.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\IStateStopFunction.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Level\ILevelSelectStateKey.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\recordHandlerDelegateFactory.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\IStateStartFunction.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\State.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\StateKey.ts" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="package.json" />

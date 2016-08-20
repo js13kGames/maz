@@ -210,9 +210,9 @@
 
     // Default task(s).
     grunt.registerTask('reset', ['clean:all']);
-    grunt.registerTask('prod', ['closure-compiler', 'htmlmin', 'replace:dist']);
-    grunt.registerTask('dist', ['ts:dist', 'copy', 'prod', 'uglify', 'compress:dist']); //, 'clean:js', 'clean:dist'
-    grunt.registerTask('js13k', ['concat', 'replace:js13k_ts', 'ts:js13k', 'prod', 'inline', 'replace:js13k_html', 'compress:js13k'])
+    grunt.registerTask('prod', ['copy', 'ts:dist', 'closure-compiler', 'htmlmin', 'replace:dist']);
+    grunt.registerTask('dist', ['prod', 'uglify', 'compress:dist']); //, 'clean:js', 'clean:dist'
+    grunt.registerTask('js13k', ['prod', 'inline', 'replace:js13k_html', 'compress:js13k'])
     grunt.registerTask('default', ['ts:dist']);
 
 };
