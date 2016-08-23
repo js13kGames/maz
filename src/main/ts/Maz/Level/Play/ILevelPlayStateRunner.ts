@@ -1,0 +1,5 @@
+﻿interface ILevelPlayStateRunner {
+
+    animationFrameRequestId: number;
+
+}

@@ -1,3 +1,3 @@
-﻿interface IStateDestroyFunction {
-    (record: IRecord<State>, e: Element): void;
+﻿interface IStateStopFunction {
+    (record: StateRunner): void;
 }

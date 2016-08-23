@@ -27,25 +27,44 @@
     <Content Include="index.html" />
     <Content Include="libbuild\closure-compiler\build\compiler.jar" />
     <Content Include="lib\analytics.js" />
-    <Content Include="lib\require-2.2.0.js" />
-    <Content Include="lib\require-2.2.0.min.js" />
     <Content Include="web.config" />
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="src\main\ts\app.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\defaultStateStopFunctionFactory.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Intro\IntroConstants.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Intro\introInit.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Intro\introStart.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Intro\IIntroState.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Intro\IntroStateKey.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Intro\IntroStateRunner.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Intro\introStop.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\IRandomNumberGenerator.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\IRecord.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\IRecordHandlerFunction.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\IStateCompleteCallback.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\IStateInitFunction.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\IStateStopFunction.ts" />
-    <TypeScriptCompile Include="src\main\ts\Maz\Level\ILevelSelectStateKey.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\Populator\levelPlayMatrixPopulatorRectangle.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\ILevelPlayMatrix.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\ILevelPlayMatrixPopulator.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\ILevelPlayStateRunner.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\LevelPlayConstants.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\levelPlayInitFactory.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\levelPlayStop.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\StateRunner.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Universe\Classification.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\ILevelPlayEntity.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Universe\IEntityType.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\ILevelPlayState.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\ILevelPlayStateKey.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\levelPlayStart.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\randomNumberGeneratorFactory.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\recordHandlerDelegateFactory.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\IStateStartFunction.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\State.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\StateKey.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Universe\IUniverse.ts" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="package.json" />

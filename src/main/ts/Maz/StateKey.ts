@@ -1,5 +1,4 @@
-﻿var STATE_KEY_INTRO = 0;
-var STATE_KEY_LEVEL = 1;
+﻿type StateKeyId = number;
 
-type StateKey = IntroStateKey | ILevelSelectStateKey;
+type StateKey = IntroStateKey | ILevelPlayStateKey;
 

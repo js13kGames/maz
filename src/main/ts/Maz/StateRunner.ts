@@ -1,0 +1,1 @@
+﻿type StateRunner = IntroStateRunner | ILevelPlayStateRunner;

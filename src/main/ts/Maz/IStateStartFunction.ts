@@ -1,5 +1,5 @@
-﻿interface IStateInitFunction {
-    (record: IRecord<StateKey>, e: Element): IRecord<State>;
+﻿interface IStateStartFunction {
+    (record: State, callback: IStateCompleteCallback): IRecord<StateRunner>;
 }
 
 
