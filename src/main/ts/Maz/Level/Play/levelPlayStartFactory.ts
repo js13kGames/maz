@@ -10,17 +10,17 @@
             renderContext.drawImage(entity.renderMask, 0, 0);
             renderContext.save();
             renderContext.globalCompositeOperation = 'source-in';
-            let background = entity.type.backgroundColor;
+            let background = entity.description.type.backgroundColor;
             if (background) {
                 renderContext.fillStyle = background;
             } else {
-                renderContext.fillStyle = entity.type.foregroundColor;
+                renderContext.fillStyle = entity.description.type.foregroundColor;
             }
             renderContext.fillRect(0, 0, entity.baseWidth, entity.baseHeight);
             if (background) {
                 renderContext.globalCompositeOperation = 'source-atop';
-                renderContext.fillStyle = entity.type.foregroundColor;
-                renderContext.fillText(entity.type.character, entity.offsetX, entity.offsetY);
+                renderContext.fillStyle = entity.description.type.foregroundColor;
+                renderContext.fillText(entity.description.type.character, entity.offsetX, entity.offsetY);
             }
             renderContext.restore();
             context.drawImage(entity.render, entity.x, entity.y);

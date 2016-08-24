@@ -2,5 +2,7 @@
     universe: IUniverse,
     x: number,
     y: number,
-    z: number
+    z: number,
+    player: ILevelPlayEntityDescription, 
+    playerEntryPoint: Direction
 }

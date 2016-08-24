@@ -1,6 +1,6 @@
 ﻿interface ILevelPlayEntity {
 
-    type: IEntityType;
+    description: ILevelPlayEntityDescription;
     renderMask: HTMLCanvasElement;
     render: HTMLCanvasElement;
     renderContext: CanvasRenderingContext2D;
@@ -11,5 +11,4 @@
     offsetX: number;
     offsetY: number;
     rotation: number;
-
 }

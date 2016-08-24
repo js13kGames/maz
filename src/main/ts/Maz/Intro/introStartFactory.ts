@@ -20,13 +20,34 @@
                 seed: universeSeed,
                 entityTypes: entityTypes
             };
+            var playerType: IEntityType = {
+                foregroundColor: COLOR_WHITE,
+                character: '@',
+                children: [],
+                classification: CLASSIFICATION_MONSTER
+            };
+            var playerInputs: { [_: number]: IInputAtomic } = {};
+            // NOTE: the inputs will be populated dynamically in the event handler, this can be empty
+                
+            var playerMind: ILevelPlayEntityMindPlayer = {
+                inputs: playerInputs
+            };
+
             nextStateCallback({
                 type: STATE_LEVEL_PLAY,
-                value: {
+                value: <ILevelPlayStateKey>{
                     universe: universe,
                     x: 0,
                     y: 0,
-                    z: 0
+                    z: 0,
+                    playerEntryPoint: DIRECTION_SOUTH,
+                    player: {
+                        mind: {
+                            type: MIND_PLAYER,
+                            value: playerMind
+                        },
+                        type: playerType
+                    }
                 }
             });
         };

@@ -120,7 +120,15 @@
 
 
                     let entity: ILevelPlayEntity = {
-                        type: entityType,
+                        description: {
+                            type: entityType,
+                            mind: {
+                                type: MIND_MONSTER,
+                                value: {
+
+                                }
+                            }    
+                        },                        
                         x: tx * tileSize + (tileSize - textWidth)/2, 
                         y: ty * tileSize + (tileSize - textHeight)/2,
                         baseWidth: textWidth,
