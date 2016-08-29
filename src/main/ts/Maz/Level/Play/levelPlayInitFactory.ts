@@ -72,11 +72,11 @@
             height = minimumDimension;
             tileSize = Math.ceil(minimumAreaTiles / height);
         }
-        let tiles: IEntityType[][][] = [];
+        let tiles: ILevelPlayEntityDescription[][][] = [];
         for (let x = 0; x < width; x++) {
-            let tilesX: IEntityType[][] = [];
+            let tilesX: ILevelPlayEntityDescription[][] = [];
             for (let y = 0; y < height; y++) {
-                let tilesY: IEntityType[] = [];
+                let tilesY: ILevelPlayEntityDescription[] = [];
                 tilesX.push(tilesY);
             }
             tiles.push(tilesX);
@@ -100,12 +100,55 @@
                 matrixPopulator(matrix, classificationValidEntityTypes, entityRng);
             }
         }
+
+        // add in the player entities
+        for (let i in stateKey.players) {
+            let playerDescription = stateKey.players[i];
+            let ii = parseInt(i);
+            
+            // find a free spot for the player to start in
+            // TODO actually search for the spot
+            let pos: IPoint;
+            switch (stateKey.playerEntryPoint) {
+                case DIRECTION_NORTH:
+                    pos = {
+                        x: Math.round(width / 2) + ii,
+                        y: 0
+                    }
+                    break;
+                default:
+                case DIRECTION_SOUTH:
+                    pos = {
+                        x: Math.round(width / 2)+ii,
+                        y: height - 1
+                    }
+                    break;
+                case DIRECTION_EAST:
+                    pos = {
+                        x: width - 1,
+                        y: Math.round(height / 2)+ii
+                    }
+                    break;
+                case DIRECTION_WEST:
+                    pos = {
+                        x: 0,
+                        y: Math.round(height / 2)+ii
+                    }
+                    break;
+            }
+            matrix.tiles[pos.x][pos.y].push(playerDescription);
+        }
+
+
+
         var entities: ILevelPlayEntity[] = [];
         // turn the matrix into a list of entities
         for (let tx = 0; tx < width; tx++) {
             for (let ty = 0; ty < height; ty++) {
                 let tile = tiles[tx][ty];
-                for (let entityType of tile) {
+                for (let description of tile) {
+
+                    var entityType = description.type;
 
                     let fitResult = fit(entityType.character, tileSize, entityType.backgroundColor == null, context);
                     let renderMask = fitResult.canvas;
@@ -120,17 +163,11 @@
 
 
                     let entity: ILevelPlayEntity = {
-                        description: {
-                            type: entityType,
-                            mind: {
-                                type: MIND_MONSTER,
-                                value: {
-
-                                }
-                            }    
-                        },                        
+                        description: description,                        
                         x: tx * tileSize + (tileSize - textWidth)/2, 
-                        y: ty * tileSize + (tileSize - textHeight)/2,
+                        y: ty * tileSize + (tileSize - textHeight) / 2,
+                        width: textWidth, 
+                        height: textHeight,
                         baseWidth: textWidth,
                         baseHeight: textHeight,
                         rotation: 0,
@@ -138,7 +175,9 @@
                         offsetY: fitResult.textOffsetY,
                         renderMask: renderMask,
                         render: render,
-                        renderContext: renderContext
+                        renderContext: renderContext,
+                        velocityX: 0,
+                        velocityY: 0
                     };
                     entities.push(entity);
                 }

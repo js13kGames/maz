@@ -12,6 +12,24 @@
         levelPlayMatrixPopulatorFillerProxyFactory(levelPlayMatrixPopulatorRectangleFactory(minTiles, true, 0, true))
     ];
 
+    var playerInputs: { [_: number]: IInputAtomic } = {};
+    playerInputs[INPUT_ATOMIC_ID_UP] = {};
+    playerInputs[INPUT_ATOMIC_ID_DOWN] = {};
+    playerInputs[INPUT_ATOMIC_ID_LEFT] = {};
+    playerInputs[INPUT_ATOMIC_ID_RIGHT] = {};
+
+    var levelPlayMindUpdateHandlers: { [_: number]: ILevelPlayEntityMindUpdateFunction } = {};
+    levelPlayMindUpdateHandlers[MIND_PLAYER_1] = levelPlayEntityMindPlayerUpdateFactory(
+        playerInputs,
+        INPUT_ATOMIC_ID_UP,
+        INPUT_ATOMIC_ID_DOWN,
+        INPUT_ATOMIC_ID_LEFT,
+        INPUT_ATOMIC_ID_RIGHT
+    );
+    levelPlayMindUpdateHandlers[MIND_MONSTER] = levelPlayEntityMindMonsterUpdateFactory();
+
+    var levelPlayMindHandler = recordHandlerDelegateFactory(levelPlayMindUpdateHandlers);
+
     var contentElement = document.body;
 
     var introElement = document.getElementById('intro');
@@ -36,7 +54,12 @@
     var startHandlers: { [_: number]: IRecordHandlerFunction<State, IRecord<StateRunner>> } = {};
     var introStart = introStartFactory(introElement, introPlayButton, introRestartButton);
     startHandlers[STATE_INTRO] = introStart;
-    startHandlers[STATE_LEVEL_PLAY] = levelPlayStartFactory(levelPlayElement, levelPlayContext);
+    startHandlers[STATE_LEVEL_PLAY] = levelPlayStartFactory(
+        levelPlayElement,
+        levelPlayContext,
+        levelPlayMindHandler,
+        playerInputs
+    );
     var startHandler = recordHandlerDelegateFactory(startHandlers);
 
     var stopHandlers: { [_: number]: IRecordHandlerFunction<StateRunner, void> } = {};

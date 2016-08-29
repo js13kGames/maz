@@ -7,14 +7,15 @@
 
         // bind any event handlers
         playButton.onclick = function () {
-            var universeSeed = Math.round(Math.random() * 1000000);
+            var universeSeed = Math.ceil(Math.random() * 1000000);
             var entityTypes: { [_: number]: IEntityType[] } = {};
             entityTypes[CLASSIFICATION_WALL] = [{
                 backgroundColor: COLOR_WHITE,
                 foregroundColor: '#EEE',
                 children: [],
                 character: '#',
-                classification: CLASSIFICATION_WALL
+                classification: CLASSIFICATION_WALL,
+                speed: 0
             }];
             var universe: IUniverse = {
                 seed: universeSeed,
@@ -24,15 +25,10 @@
                 foregroundColor: COLOR_WHITE,
                 character: '@',
                 children: [],
-                classification: CLASSIFICATION_MONSTER
+                classification: CLASSIFICATION_MONSTER,
+                speed: 4
             };
-            var playerInputs: { [_: number]: IInputAtomic } = {};
-            // NOTE: the inputs will be populated dynamically in the event handler, this can be empty
                 
-            var playerMind: ILevelPlayEntityMindPlayer = {
-                inputs: playerInputs
-            };
-
             nextStateCallback({
                 type: STATE_LEVEL_PLAY,
                 value: <ILevelPlayStateKey>{
@@ -41,13 +37,14 @@
                     y: 0,
                     z: 0,
                     playerEntryPoint: DIRECTION_SOUTH,
-                    player: {
+                    players: [{
                         mind: {
-                            type: MIND_PLAYER,
-                            value: playerMind
+                            type: MIND_PLAYER_1,
+                            // player mind
+                            value: {}
                         },
                         type: playerType
-                    }
+                    }]
                 }
             });
         };

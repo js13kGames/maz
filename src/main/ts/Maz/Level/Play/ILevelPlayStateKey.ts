@@ -3,6 +3,6 @@
     x: number,
     y: number,
     z: number,
-    player: ILevelPlayEntityDescription, 
+    players: ILevelPlayEntityDescription[], 
     playerEntryPoint: Direction
 }

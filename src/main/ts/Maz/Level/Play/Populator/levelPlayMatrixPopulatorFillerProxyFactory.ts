@@ -17,7 +17,7 @@
         floodFillEmpty(ignorePoints, matrix, point.x, point.y, matrix.tiles[point.x][point.y][0]);
     }
 
-    function floodFillEmpty(ignorePoints: boolean[][], matrix: ILevelPlayMatrix, x: number, y: number, w: IEntityType) {
+    function floodFillEmpty(ignorePoints: boolean[][], matrix: ILevelPlayMatrix, x: number, y: number, w: ILevelPlayEntityDescription) {
         let count = 0;
         for (let p of POINT_DIRECTIONS_ALL) {
             let xi = x + p.x;

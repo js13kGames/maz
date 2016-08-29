@@ -117,7 +117,13 @@
                         xi--;
                         for (var yi = y + height; yi > y;) {
                             yi--;
-                            matrix.tiles[xi][yi].push(entityType);
+                            matrix.tiles[xi][yi].push({
+                                type: entityType,
+                                mind: {
+                                    type: MIND_MONSTER,
+                                    value: {}
+                                }
+                            });
                         }
                     }
                 }
