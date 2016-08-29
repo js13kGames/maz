@@ -1,0 +1,3 @@
+﻿interface ICollisionResolutionSolid {
+    elasticity: number;
+}

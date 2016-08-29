@@ -9,6 +9,8 @@
     speed: number;
     // TODO abilities
     // TODO collision effects
-    collisionAttributes: IRecord<number>[];
-    collisionEffects: IRecord<number>[];
+    //collisionAttributes: IRecord<number>[];
+    //collisionEffects: IRecord<number>[];
+    collisionResolutions: IRecord<CollisionResolution>[];
+    supportedCollisionResolutions: CollisionResolutionType[];
 }

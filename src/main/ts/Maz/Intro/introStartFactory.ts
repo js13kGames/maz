@@ -10,12 +10,14 @@
             var universeSeed = Math.ceil(Math.random() * 1000000);
             var entityTypes: { [_: number]: IEntityType[] } = {};
             entityTypes[CLASSIFICATION_WALL] = [{
-                backgroundColor: COLOR_WHITE,
-                foregroundColor: '#EEE',
+                backgroundColor: '#9AA',
+                foregroundColor: '#DEE',
                 children: [],
                 character: '#',
                 classification: CLASSIFICATION_WALL,
-                speed: 0
+                speed: 0,
+                collisionResolutions: [],
+                supportedCollisionResolutions: []
             }];
             var universe: IUniverse = {
                 seed: universeSeed,
@@ -26,7 +28,9 @@
                 character: '@',
                 children: [],
                 classification: CLASSIFICATION_MONSTER,
-                speed: 4
+                speed: 4,
+                collisionResolutions: [],
+                supportedCollisionResolutions: []
             };
                 
             nextStateCallback({

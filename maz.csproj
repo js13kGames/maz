@@ -69,7 +69,9 @@
     <TypeScriptCompile Include="src\main\ts\Maz\toFont.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Universe\Classification.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\ILevelPlayEntity.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Universe\Collision\CollisionResolution.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Universe\Collision\CollisionResolutionType.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Universe\Collision\ICollisionResolutionSolid.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Universe\IEntityType.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\ILevelPlayState.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\ILevelPlayStateKey.ts" />

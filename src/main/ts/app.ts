@@ -58,7 +58,8 @@
         levelPlayElement,
         levelPlayContext,
         levelPlayMindHandler,
-        playerInputs
+        playerInputs,
+        5
     );
     var startHandler = recordHandlerDelegateFactory(startHandlers);
 
