@@ -1,4 +1,5 @@
 ﻿function levelPlayInitFactory(
+    tileMargin: number,
     matrixPopulators: { [_: number]: ILevelPlayMatrixPopulator[] },
     containerElement: HTMLElement,
     canvasElement: HTMLCanvasElement,
@@ -8,38 +9,83 @@
 ): IStateInitFunction {
 
     function fit(char: string, tileSize: number, tight: boolean, context: CanvasRenderingContext2D) {
-        let font = toFont(tileSize);
-        context.font = font;
-        let maxTextWidth = context.measureText(char).width;
-        let maxTextHeight = tileSize;
+        let fits: boolean;
+        let textOffsetX: number;
+        let textOffsetY: number;
+        let font: string;
+        let canvas: HTMLCanvasElement;
+        let fontSize = tileSize;
         let maxCanvas = document.createElement('canvas');
-        let maxContext: CanvasRenderingContext2D;
-
-        let textOffsetX;
-        let textOffsetY;
-        if (tight) {
+        do {
+            font = toFont(fontSize);
+            fontSize--;
+            context.font = font;
+            let maxTextWidth = Math.ceil(context.measureText(char).width);
+            let maxTextHeight = tileSize * 2;
+            let textOffsetX;
+            let textOffsetY;
+            fits = true;
             maxCanvas.width = maxTextWidth;
             maxCanvas.height = maxTextHeight;
-            maxContext = maxCanvas.getContext('2d');
+            let maxContext = maxCanvas.getContext('2d');
             maxContext.fillStyle = COLOR_WHITE;
-            textOffsetX = 0;
-            textOffsetY = 0;
             maxContext.font = font;
             maxContext.textBaseline = 'top';
             maxContext.fillText(char, 0, 0);
-            // TODO make as tight as possible
-            //let data = maxContext.getImageData(0, 0, maxTextWidth, maxTextHeight);
-        } else {
+            // make as tight as possible
+            let data = maxContext.getImageData(0, 0, maxTextWidth, maxTextHeight);
+            let minx = maxTextWidth;
+            let maxx = 0;
+            let miny = maxTextHeight;
+            let maxy = 0;
+            for (let x = maxTextWidth; x > 0;) {
+                x--;
+                for (let y = maxTextHeight; y > 0;) {
+                    y--;
+                    let d = data.data[(y * maxTextWidth + x) * 4 + 3];
+                    if (d) {
+                        minx = Math.min(minx, x);
+                        maxx = Math.max(maxx, x);
+                        miny = Math.min(miny, y);
+                        maxy = Math.max(maxy, y);
+                    } 
+                }
+            }
+
+            let textWidth = maxx - minx + 1;
+            let textHeight = maxy - miny + 1;
+
+            if (textWidth > 0 && textHeight > 0) {
+                let minSize = tileSize * (1 - tileMargin * 2);
+                if (textWidth < minSize && textHeight < minSize) {
+                    textOffsetX = -minx;
+                    textOffsetY = -miny;
+
+                    canvas = document.createElement('canvas');
+                    canvas.width = textWidth;
+                    canvas.height = textHeight;
+                    let canvasContext = canvas.getContext('2d');
+                    canvasContext.drawImage(maxCanvas, textOffsetX, textOffsetY);
+                } else {
+                    fits = false;
+                }
+            } else {
+                // we've got a bad character!
+                return null;
+            }
+
+        } while (!fits);
+
+        if (!tight) {
             maxCanvas.width = tileSize;
             maxCanvas.height = tileSize;
-            maxContext = maxCanvas.getContext('2d');
+            let maxContext = maxCanvas.getContext('2d');
             maxContext.fillStyle = COLOR_WHITE;
             maxContext.fillRect(0, 0, tileSize, tileSize);
-            textOffsetX = (tileSize - maxTextWidth) / 2;
-            textOffsetY = 0;
+            canvas = maxCanvas;
         }
         return {
-            canvas: maxCanvas,
+            canvas: canvas,
             textOffsetX: textOffsetX,
             textOffsetY: textOffsetY,
             font: font

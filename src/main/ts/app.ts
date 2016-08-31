@@ -1,6 +1,7 @@
 ﻿window.onload = function () {
 
     var minTiles = 348;
+    var tileMargin = 0.05;
 
     var matrixPopulators: { [_: number]: ILevelPlayMatrixPopulator[] } = {};
     matrixPopulators[CLASSIFICATION_WALL] = [
@@ -20,6 +21,7 @@
 
     var levelPlayMindUpdateHandlers: { [_: number]: ILevelPlayEntityMindUpdateFunction } = {};
     levelPlayMindUpdateHandlers[MIND_PLAYER_1] = levelPlayEntityMindPlayerUpdateFactory(
+        tileMargin,
         playerInputs,
         INPUT_ATOMIC_ID_UP,
         INPUT_ATOMIC_ID_DOWN,
@@ -42,6 +44,7 @@
     var initHandlers: { [_: number]: IRecordHandlerFunction<StateKey, IRecord<State>> } = {};
     initHandlers[STATE_INTRO] = introInit;
     initHandlers[STATE_LEVEL_PLAY] = levelPlayInitFactory(
+        tileMargin, 
         matrixPopulators,
         contentElement,
         levelPlayElement,
