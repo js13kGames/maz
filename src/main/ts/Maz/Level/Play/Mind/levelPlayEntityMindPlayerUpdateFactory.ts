@@ -83,7 +83,7 @@ function levelPlayEntityMindPlayerUpdateFactory(
         let result: ILevelPlayEntityMindUpdateResult = {};
         if (!entity.animations['x']) {
             result.newAnimations = {
-                x: animationMotionWalk(2000, entity.baseWidth, entity.baseHeight)
+                x: animationMotionWalk(800, entity.baseWidth, entity.baseHeight)
             };
         }
         return result;

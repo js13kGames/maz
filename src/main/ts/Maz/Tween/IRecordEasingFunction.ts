@@ -1,3 +1,3 @@
 ﻿interface IRecordEasingFunction {
-    (easingRecord: IRecord<Easing>, t: number): number;
+    (easingRecord: IEasingRecord, t: number): number;
 }

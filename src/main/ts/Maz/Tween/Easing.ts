@@ -11,4 +11,13 @@ _easingFunctions[EASING_QUADRATIC_IN] = easingQuadraticInFunction;
 _easingFunctions[EASING_QUADRATIC_OUT] = easingQuadraticOutFunction;
 _easingFunctions[EASING_QUADRATIC_IN_OUT] = easingQuadraticInOutFunction;
 
-let recordEasingFunction: IRecordEasingFunction = recordHandlerDelegateFactory(_easingFunctions);
+let _recordEasingFunction: IRecordEasingFunction = recordHandlerDelegateFactory(_easingFunctions);
+let recordEasingFunction: IRecordEasingFunction = function (easingRecord: IEasingRecord, t: number): number {
+    if (easingRecord.bounce) {
+        t *= 2;
+        if (t > 1) {
+            t = 2 - t;
+        }
+    }
+    return _recordEasingFunction(easingRecord, t);
+};

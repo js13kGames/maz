@@ -1,7 +1,6 @@
 ﻿interface ITween {
-    easing: IRecord<Easing>;
+    easing: IEasingRecord;
     effect: IRecord<Effect>;
     durationMillis: number;
     repeat?: boolean;
-    bounce?: boolean;
 }

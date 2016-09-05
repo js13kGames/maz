@@ -10,7 +10,7 @@
                     type: EFFECT_SCALE,
                     value: {
                         xStart: 1.15,
-                        yStart: 0.9,
+                        yStart: 0.8,
                         dx: -0.3,
                         dy: 0.2,
                         cx: 0.5,
@@ -22,7 +22,8 @@
             {
                 durationMillis: duration,
                 easing: {
-                    type: EASING_QUADRATIC_OUT
+                    type: EASING_QUADRATIC_OUT,
+                    bounce: true
                 },
                 effect: {
                     type: EFFECT_TRANSLATE,
@@ -30,7 +31,7 @@
                         xStart: 0,
                         yStart: 0,
                         dx: 0,
-                        dy: -0.4 * height
+                        dy: -0.3 * height
                     }
                 },
                 repeat: true

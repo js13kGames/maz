@@ -1,0 +1,10 @@
+﻿let ORIENTATION_FACING_LEFT_FEET_UP: Orientation = 1;
+let ORIENTATION_FACING_LEFT_FEET_DOWN: Orientation = 2;
+let ORIENTATION_FACING_RIGHT_FEET_UP: Orientation = 3;
+let ORIENTATION_FACING_RIGHT_FEET_DOWN: Orientation = 4;
+let ORIENTATION_FACING_UP_FEET_RIGHT: Orientation = 5;
+let ORIENTATION_FACING_UP_FEET_LEFT: Orientation = 6;
+let ORIENTATION_FACING_DOWN_FEET_RIGHT: Orientation = 7;
+let ORIENTATION_FACING_DOWN_FEET_LEFT: Orientation = 8;
+
+type Orientation = number;
