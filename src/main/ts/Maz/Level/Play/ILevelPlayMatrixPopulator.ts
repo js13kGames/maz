@@ -1,3 +1,3 @@
 ﻿interface ILevelPlayMatrixPopulator {
-    (matrix: ILevelPlayMatrix, validEntityTypes: IEntityType[], rng: IRandomNumberGenerator): void;
+    (matrix: ILevelPlayMatrix<ILevelPlayEntityDescription[]>, validEntityTypes: IEntityType[], difficulty: number, rng: IRandomNumberGenerator): void;
 }

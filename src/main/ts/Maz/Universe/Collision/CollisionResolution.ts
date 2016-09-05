@@ -1,1 +1,1 @@
-﻿type CollisionResolution = ICollisionResolutionSolid;
+﻿type CollisionResolution = void;

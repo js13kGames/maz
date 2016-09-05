@@ -8,8 +8,10 @@
     minimumDimension: number
 ): IStateInitFunction {
 
-    function fit(char: string, tileSize: number, tight: boolean, context: CanvasRenderingContext2D) {
+    function fit(char: string, tileSize: number, tight: boolean, padding: number, context: CanvasRenderingContext2D) {
         let fits: boolean;
+        let textWidth: number;
+        let textHeight: number;
         let textOffsetX: number;
         let textOffsetY: number;
         let font: string;
@@ -17,13 +19,11 @@
         let fontSize = tileSize;
         let maxCanvas = document.createElement('canvas');
         do {
-            font = toFont(fontSize);
+            font = toFont(fontSize, !tight);
             fontSize--;
             context.font = font;
             let maxTextWidth = Math.ceil(context.measureText(char).width);
             let maxTextHeight = tileSize * 2;
-            let textOffsetX;
-            let textOffsetY;
             fits = true;
             maxCanvas.width = maxTextWidth;
             maxCanvas.height = maxTextHeight;
@@ -52,14 +52,16 @@
                 }
             }
 
-            let textWidth = maxx - minx + 1;
-            let textHeight = maxy - miny + 1;
+            textWidth = maxx - minx + 1;
+            textHeight = maxy - miny + 1;
 
             if (textWidth > 0 && textHeight > 0) {
                 let minSize = tileSize * (1 - tileMargin * 2);
                 if (textWidth < minSize && textHeight < minSize) {
-                    textOffsetX = -minx;
-                    textOffsetY = -miny;
+                    textWidth += padding * 2;
+                    textHeight += padding * 2;
+                    textOffsetX = -minx + padding;
+                    textOffsetY = -miny + padding;
 
                     canvas = document.createElement('canvas');
                     canvas.width = textWidth;
@@ -83,6 +85,8 @@
             maxContext.fillStyle = COLOR_WHITE;
             maxContext.fillRect(0, 0, tileSize, tileSize);
             canvas = maxCanvas;
+            textOffsetX = (tileSize - textWidth) / 2 + textOffsetX;
+            textOffsetY = (tileSize - textWidth) / 2 + textOffsetY;
         }
         return {
             canvas: canvas,
@@ -118,21 +122,10 @@
             height = minimumDimension;
             tileSize = Math.ceil(minimumAreaTiles / height);
         }
-        let tiles: ILevelPlayEntityDescription[][][] = [];
-        for (let x = 0; x < width; x++) {
-            let tilesX: ILevelPlayEntityDescription[][] = [];
-            for (let y = 0; y < height; y++) {
-                let tilesY: ILevelPlayEntityDescription[] = [];
-                tilesX.push(tilesY);
-            }
-            tiles.push(tilesX);
-        }
 
-        let matrix: ILevelPlayMatrix = {
-            width: width, 
-            height: height,
-            tiles: tiles
-        };
+        let matrix = levelPlayMatrixCreate<ILevelPlayEntityDescription[]>(width, height, function () {
+            return [];
+        });
 
         canvasElement.width = width * tileSize;
         canvasElement.height = height * tileSize;
@@ -143,7 +136,7 @@
             if (classificationMatrixPopulators && classificationValidEntityTypes) {
                 var matrixPopulatorIndex = levelRng(classificationMatrixPopulators.length);
                 var matrixPopulator = classificationMatrixPopulators[matrixPopulatorIndex];
-                matrixPopulator(matrix, classificationValidEntityTypes, entityRng);
+                matrixPopulator(matrix, classificationValidEntityTypes, stateKey.z, entityRng);
             }
         }
 
@@ -187,45 +180,59 @@
 
 
 
-        var entities: ILevelPlayEntity[] = [];
+        let entities: ILevelPlayEntity[] = [];
+        let entityMatrix = levelPlayMatrixCreate<ILevelPlayEntity[]>(width, height, function () {
+            return [];
+        });
         // turn the matrix into a list of entities
         for (let tx = 0; tx < width; tx++) {
             for (let ty = 0; ty < height; ty++) {
-                let tile = tiles[tx][ty];
+                let tile = matrix.tiles[tx][ty];
                 for (let description of tile) {
 
                     var entityType = description.type;
 
-                    let fitResult = fit(entityType.character, tileSize, entityType.backgroundColor == null, context);
+                    let padding: number;
+                    if (entityType.backgroundColor != null) {
+                        padding = 0;
+                    } else {
+                        padding = Math.ceil(tileSize / 5);
+                    }
+                    let fitResult = fit(entityType.character, tileSize, entityType.backgroundColor == null, padding, context);
                     let renderMask = fitResult.canvas;
                     let textWidth = renderMask.width;
                     let textHeight = renderMask.height;
+                    let entityWidth = textWidth;
+                    let entityHeight = textHeight;
+
                     let render = document.createElement('canvas');
-                    render.width = textWidth;
-                    render.height = textHeight;
+                    render.width = entityWidth;
+                    render.height = entityHeight;
                     let renderContext = render.getContext('2d');
                     renderContext.font = fitResult.font;
                     renderContext.textBaseline = 'top';
 
-
                     let entity: ILevelPlayEntity = {
-                        description: description,                        
-                        x: tx * tileSize + (tileSize - textWidth)/2, 
+                        description: description,
+                        x: tx * tileSize + (tileSize - textWidth) / 2,
                         y: ty * tileSize + (tileSize - textHeight) / 2,
-                        width: textWidth, 
-                        height: textHeight,
-                        baseWidth: textWidth,
-                        baseHeight: textHeight,
+                        width: entityWidth,
+                        height: entityHeight,
+                        baseWidth: entityWidth,
+                        baseHeight: entityHeight,
                         rotation: 0,
                         offsetX: fitResult.textOffsetX,
                         offsetY: fitResult.textOffsetY,
+                        font: fitResult.font,
                         renderMask: renderMask,
                         render: render,
                         renderContext: renderContext,
                         velocityX: 0,
-                        velocityY: 0
+                        velocityY: 0,
+                        animations: {}
                     };
                     entities.push(entity);
+                    levelPlayEntityMatrixAdd(entityMatrix, tileSize, entity);
                 }
             }
         }
@@ -234,9 +241,11 @@
             type: STATE_LEVEL_PLAY,
             value: {
                 entities: entities,
+                matrix: entityMatrix,
                 width: width, 
                 height: height,
-                tileSize: tileSize
+                tileSize: tileSize,
+                rng: entityRng
             }
         }
     }

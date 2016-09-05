@@ -16,7 +16,7 @@
         }
     ];
 
-    return function (matrix: ILevelPlayMatrix, validEntityTypes: IEntityType[], rng: IRandomNumberGenerator) {
+    return function (matrix: ILevelPlayMatrix<ILevelPlayEntityDescription[]>, validEntityTypes: IEntityType[], difficulty: number, rng: IRandomNumberGenerator) {
         let maxBlockWidth = rng(rng() * (matrix.width - 2) ) + 1;
         let maxBlockHeight = rng(rng() * (matrix.height - 2) ) + 1;
         let minBlockWidth = rng(maxBlockWidth) + 1;

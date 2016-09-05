@@ -30,7 +30,7 @@ function levelPlayEntityMindPlayerUpdateFactory(
         return result;
     }
 
-    return function (mind: ILevelPlayEntityMindPlayer, state: ILevelPlayState, entity: ILevelPlayEntity): ILevelPlayEntity[] {
+    return function (mind: ILevelPlayEntityMindPlayer, state: ILevelPlayState, entity: ILevelPlayEntity): ILevelPlayEntityMindUpdateResult {
 
         // set the velocity appropriately
         let directionInput = readLatest(upKeyCode, downKeyCode, leftKeyCode, rightKeyCode);
@@ -80,6 +80,12 @@ function levelPlayEntityMindPlayerUpdateFactory(
         }
         entity.velocityX = vx;
         entity.velocityY = vy;
-        return null;
+        let result: ILevelPlayEntityMindUpdateResult = {};
+        if (!entity.animations['x']) {
+            result.newAnimations = {
+                x: animationMotionWalk(2000, entity.baseWidth, entity.baseHeight)
+            };
+        }
+        return result;
     }
 }

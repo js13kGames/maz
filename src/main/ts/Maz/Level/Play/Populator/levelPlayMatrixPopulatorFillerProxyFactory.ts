@@ -1,6 +1,6 @@
 ﻿function levelPlayMatrixPopulatorFillerProxyFactory(proxied: ILevelPlayMatrixPopulator): ILevelPlayMatrixPopulator {
 
-    function fill(matrix: ILevelPlayMatrix, point: IPoint) {
+    function fill(matrix: ILevelPlayMatrix<ILevelPlayEntityDescription[]>, point: IPoint) {
         let ignorePoints: boolean[][] = [];
         for (let x = 0; x < matrix.width; x++) {
             let xIgnorePoints: boolean[] = [];
@@ -17,7 +17,7 @@
         floodFillEmpty(ignorePoints, matrix, point.x, point.y, matrix.tiles[point.x][point.y][0]);
     }
 
-    function floodFillEmpty(ignorePoints: boolean[][], matrix: ILevelPlayMatrix, x: number, y: number, w: ILevelPlayEntityDescription) {
+    function floodFillEmpty(ignorePoints: boolean[][], matrix: ILevelPlayMatrix<ILevelPlayEntityDescription[]>, x: number, y: number, w: ILevelPlayEntityDescription) {
         let count = 0;
         for (let p of POINT_DIRECTIONS_ALL) {
             let xi = x + p.x;
@@ -43,7 +43,7 @@
         }
     }
 
-    function floodFillOccupied(ignorePoints: boolean[][], matrix: ILevelPlayMatrix, x: number, y: number) {
+    function floodFillOccupied(ignorePoints: boolean[][], matrix: ILevelPlayMatrix<ILevelPlayEntityDescription[]>, x: number, y: number) {
         ignorePoints[x][y] = true;
         for (let p of POINT_DIRECTIONS_CARDINAL) {
             let xi = x + p.x;
@@ -54,8 +54,8 @@
         }
     }
 
-    return function (matrix: ILevelPlayMatrix, validEntityTypes: IEntityType[], rng: IRandomNumberGenerator) {
-        proxied(matrix, validEntityTypes, rng);
+    return function (matrix: ILevelPlayMatrix<ILevelPlayEntityDescription[]>, validEntityTypes: IEntityType[], difficulty: number, rng: IRandomNumberGenerator) {
+        proxied(matrix, validEntityTypes, difficulty, rng);
         let points: IPoint[] = [];
         for (let x = 0; x < matrix.width; x++) {
             for (let y = 0; y < matrix.height; y++) {

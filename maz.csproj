@@ -31,6 +31,8 @@
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="src\main\ts\app.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\arrayContains.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\arrayRemove.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Colors.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\defaultStateStopFunctionFactory.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Direction.ts" />
@@ -51,12 +53,19 @@
     <TypeScriptCompile Include="src\main\ts\Maz\IStateStopFunction.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\ILevelPlayEntityDescription.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\ILevelPlayEntityMindUpdateFunction.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\ILevelPlayEntityMindUpdateResult.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\Matrix\levelPlayEntityMatrixAdd.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\Matrix\levelPlayEntityMatrixRemove.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\Matrix\levelPlayMatrixCreate.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\Matrix\levelPlayMatrixIterate.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\Matrix\levelPlayMatrixList.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\Mind\ILevelPlayEntityMindPlayer.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\LevelPlayEntityMind.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\Mind\ILevelPlayEntityMindMonster.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\Mind\levelPlayEntityMindMonsterUpdateFactory.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\Mind\levelPlayEntityMindPlayerUpdateFactory.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\Populator\levelPlayMatrixPopulatorFillerProxyFactory.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\Populator\levelPlayMatrixPopulatorFloodFillFactory.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\Populator\levelPlayMatrixPopulatorRectangleFactory.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\ILevelPlayMatrix.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\ILevelPlayMatrixPopulator.ts" />
@@ -69,9 +78,9 @@
     <TypeScriptCompile Include="src\main\ts\Maz\toFont.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Universe\Classification.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\ILevelPlayEntity.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Universe\Collision\ICollisionHandler.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Universe\Collision\CollisionResolution.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Universe\Collision\CollisionResolutionType.ts" />
-    <TypeScriptCompile Include="src\main\ts\Maz\Universe\Collision\ICollisionResolutionSolid.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Universe\IEntityType.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\ILevelPlayState.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\ILevelPlayStateKey.ts" />

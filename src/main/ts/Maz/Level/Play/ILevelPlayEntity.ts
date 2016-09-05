@@ -4,11 +4,15 @@
     renderMask: HTMLCanvasElement;
     render: HTMLCanvasElement;
     renderContext: CanvasRenderingContext2D;
+    renderNotDirty?: boolean;
     baseWidth: number;
     baseHeight: number;
     offsetX: number;
     offsetY: number;
+    font: string;
     rotation: number;
+
+    animations: { [_:string]:ILevelPlayEntityAnimation };
 
     dead?: boolean;
 

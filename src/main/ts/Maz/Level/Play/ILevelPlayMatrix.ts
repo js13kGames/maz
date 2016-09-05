@@ -1,5 +1,5 @@
-﻿interface ILevelPlayMatrix {
+﻿interface ILevelPlayMatrix<TileType> {
     width: number;
     height: number;
-    tiles: ILevelPlayEntityDescription[][][];
+    tiles: TileType[][];
 }

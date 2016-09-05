@@ -13,6 +13,22 @@
         levelPlayMatrixPopulatorFillerProxyFactory(levelPlayMatrixPopulatorRectangleFactory(minTiles, true, 0, true))
     ];
 
+    let monsterFilter = function (entityDescriptions: ILevelPlayEntityDescription[]) {
+        for (let entityDescription of entityDescriptions) {
+            if (entityDescription.type.classification == CLASSIFICATION_WALL || entityDescription.type.classification == CLASSIFICATION_OBSTACLE) {
+                return false;
+            }
+        }
+        return true;
+    };
+
+    matrixPopulators[CLASSIFICATION_MONSTER] = [
+        levelPlayMatrixPopulatorFloodFillFactory(6, 1, 1, 0, 10, monsterFilter)
+    ];
+    matrixPopulators[CLASSIFICATION_COLLECTABLE_COMMON] = [
+        levelPlayMatrixPopulatorFloodFillFactory(1, 0, minTiles, 0, 20, monsterFilter)
+    ]
+
     var playerInputs: { [_: number]: IInputAtomic } = {};
     playerInputs[INPUT_ATOMIC_ID_UP] = {};
     playerInputs[INPUT_ATOMIC_ID_DOWN] = {};
@@ -44,7 +60,7 @@
     var initHandlers: { [_: number]: IRecordHandlerFunction<StateKey, IRecord<State>> } = {};
     initHandlers[STATE_INTRO] = introInit;
     initHandlers[STATE_LEVEL_PLAY] = levelPlayInitFactory(
-        tileMargin, 
+        tileMargin * 4, 
         matrixPopulators,
         contentElement,
         levelPlayElement,

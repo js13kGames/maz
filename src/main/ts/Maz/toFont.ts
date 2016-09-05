@@ -1,3 +1,3 @@
-﻿function toFont(sizePx: number) {
-    return ''+sizePx+'px monospace';
+﻿function toFont(sizePx: number, bold?:boolean) {
+    return (bold ? 'bold ' : '') + sizePx +'px serif';
 }
