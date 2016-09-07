@@ -5,19 +5,21 @@ let EASING_QUADRATIC_IN_OUT = 4;
 
 type Easing = EasingLinear | EasingQuadraticIn | EasingQuadraticOut | EasingQuadraticInOut;
 
-let _easingFunctions: { [_: number]: IEasingFunction } = {};
-_easingFunctions[EASING_LINEAR] = easingLinearFunction;
-_easingFunctions[EASING_QUADRATIC_IN] = easingQuadraticInFunction;
-_easingFunctions[EASING_QUADRATIC_OUT] = easingQuadraticOutFunction;
-_easingFunctions[EASING_QUADRATIC_IN_OUT] = easingQuadraticInOutFunction;
+function easingInit(): IRecordEasingFunction {
+    let _easingFunctions: { [_: number]: IEasingFunction } = {};
+    _easingFunctions[EASING_LINEAR] = easingLinearFunction;
+    _easingFunctions[EASING_QUADRATIC_IN] = easingQuadraticInFunction;
+    _easingFunctions[EASING_QUADRATIC_OUT] = easingQuadraticOutFunction;
+    _easingFunctions[EASING_QUADRATIC_IN_OUT] = easingQuadraticInOutFunction;
 
-let _recordEasingFunction: IRecordEasingFunction = recordHandlerDelegateFactory(_easingFunctions);
-let recordEasingFunction: IRecordEasingFunction = function (easingRecord: IEasingRecord, t: number): number {
-    if (easingRecord.bounce) {
-        t *= 2;
-        if (t > 1) {
-            t = 2 - t;
+    let _recordEasingFunction: IRecordEasingFunction = recordHandlerDelegateFactory(_easingFunctions);
+    return function (easingRecord: IEasingRecord, t: number): number {
+        if (easingRecord.bounce) {
+            t *= 2;
+            if (t > 1) {
+                t = 2 - t;
+            }
         }
-    }
-    return _recordEasingFunction(easingRecord, t);
-};
+        return _recordEasingFunction(easingRecord, t);
+    };
+}

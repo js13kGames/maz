@@ -9,12 +9,12 @@
                 effect: {
                     type: EFFECT_SCALE,
                     value: {
-                        xStart: 1.15,
-                        yStart: 0.8,
-                        dx: -0.3,
-                        dy: 0.2,
+                        xStart: 1.2,
+                        yStart: 0.7,
+                        dx: -0.4,
+                        dy: 0.4,
                         cx: 0.5,
-                        cy: 1
+                        cy: 0.8
                     }
                 },
                 repeat: true
@@ -29,7 +29,7 @@
                     type: EFFECT_TRANSLATE,
                     value: {
                         xStart: 0,
-                        yStart: 0,
+                        yStart: 0.15 * height,
                         dx: 0,
                         dy: -0.3 * height
                     }

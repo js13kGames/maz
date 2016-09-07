@@ -4,9 +4,9 @@
     fillQuantity: number,
     fillQuantityDifficultyMultiplier: number,
     maxAttempts: number,
-    filter: (entities: ILevelPlayEntityDescription[]) => boolean
+    filter: (entities: ILevelPlayEntityDescription[], matrix?: ILevelPlayMatrix<ILevelPlayEntityDescription[]>, x?: number, y?: number) => boolean
 ): ILevelPlayMatrixPopulator {
-    return function (matrix: ILevelPlayMatrix<ILevelPlayEntityDescription[]>, validEntityTypes: IEntityType[], difficulty: number, rng: IRandomNumberGenerator): void {
+    return function (stateKey: ILevelPlayStateKey, matrix: ILevelPlayMatrix<ILevelPlayEntityDescription[]>, validEntityTypes: IEntityType[], difficulty: number, rng: IRandomNumberGenerator): void {
         let fillsRemaining = Math.ceil(fills + fillDifficultyMultiplier * difficulty);
         let attemptsRemaining = maxAttempts + fillsRemaining;
 
@@ -21,7 +21,7 @@
 
             function accept(x: number, y: number, points: IPoint[]) {
                 let entityDescriptions = matrix.tiles[x][y];
-                if (filter(entityDescriptions)) {
+                if (filter(entityDescriptions, matrix, x, y)) {
                     for (let entityDescription of entityDescriptions) {
                         if (entityDescription.type == entityType) {
                             return; // same as false

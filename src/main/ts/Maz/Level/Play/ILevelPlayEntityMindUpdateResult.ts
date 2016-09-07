@@ -6,4 +6,5 @@
     deletedAnimationIds?: string[];
 
     newOrientation?: Orientation;
+    newState?: IRecord<StateKey>;
 }

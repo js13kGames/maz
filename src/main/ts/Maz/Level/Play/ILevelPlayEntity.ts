@@ -5,8 +5,7 @@
     render: HTMLCanvasElement;
     renderContext: CanvasRenderingContext2D;
     renderNotDirty?: boolean;
-    baseWidth: number;
-    baseHeight: number;
+    orientation: Orientation;
     offsetX: number;
     offsetY: number;
     font: string;
@@ -19,6 +18,7 @@
     // movement
     velocityX: number;
     velocityY: number;
+    updateStartOrientation?: Orientation;
     updateStartX?: number;
     updateStartY?: number;
     updateDurationOffset?: number;

@@ -6,5 +6,8 @@
         document.onkeydown = null;
         document.onkeyup = null;
 
+        for (let key in runner.eventListeners) {
+            document.removeEventListener(key, runner.eventListeners[key]);
+        }
     }
 }

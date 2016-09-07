@@ -33,7 +33,11 @@
     <TypeScriptCompile Include="src\main\ts\app.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\Animation\animationMotionHop.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\Animation\animationMotionWalk.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\Animation\animationTurn.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\ILevelPlayEntityAnimation.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\Mind\LevelPlayEntityMindInert.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\Orientation.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\Populator\levelPlayMatrixPopulatorBoundaryProxyFactory.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Tween\Easing\easingLinearFunction.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Tween\Easing\EasingQuadraticIn.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Tween\Easing\easingQuadraticInFunction.ts" />
@@ -49,6 +53,7 @@
     <TypeScriptCompile Include="src\main\ts\Maz\Tween\Effect\IEffectTranslate.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Tween\IContextEffectFunction.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Tween\IEasingFunction.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Tween\IEasingRecord.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Tween\IRecordContextEffectFunction.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Tween\IRecordEasingFunction.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Tween\ITween.ts" />

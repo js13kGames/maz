@@ -8,7 +8,7 @@
     minimumDimension: number
 ): IStateInitFunction {
 
-    function fit(char: string, tileSize: number, tight: boolean, padding: number, context: CanvasRenderingContext2D) {
+    function fit(char: string, tileSize: number, tight: boolean, bold: boolean, outlineWidth: number, padding: number, context: CanvasRenderingContext2D) {
         let fits: boolean;
         let textWidth: number;
         let textHeight: number;
@@ -19,7 +19,7 @@
         let fontSize = tileSize;
         let maxCanvas = document.createElement('canvas');
         do {
-            font = toFont(fontSize, !tight);
+            font = toFont(fontSize, bold);
             fontSize--;
             context.font = font;
             let maxTextWidth = Math.ceil(context.measureText(char).width);
@@ -32,6 +32,11 @@
             maxContext.font = font;
             maxContext.textBaseline = 'top';
             maxContext.fillText(char, 0, 0);
+            if (outlineWidth) {
+                maxContext.strokeStyle = COLOR_WHITE;
+                maxContext.lineWidth = outlineWidth;
+                maxContext.strokeText(char, 0, 0);
+            }
             // make as tight as possible
             let data = maxContext.getImageData(0, 0, maxTextWidth, maxTextHeight);
             let minx = maxTextWidth;
@@ -58,10 +63,19 @@
             if (textWidth > 0 && textHeight > 0) {
                 let minSize = tileSize * (1 - tileMargin * 2);
                 if (textWidth < minSize && textHeight < minSize) {
+
                     textWidth += padding * 2;
                     textHeight += padding * 2;
                     textOffsetX = -minx + padding;
                     textOffsetY = -miny + padding;
+
+                    if (textWidth > textHeight) {
+                        textOffsetY += (textWidth - textHeight) / 2;
+                        textHeight = textWidth;
+                    } else {
+                        textOffsetX += (textHeight - textWidth) / 2;
+                        textWidth = textHeight;
+                    }
 
                     canvas = document.createElement('canvas');
                     canvas.width = textWidth;
@@ -112,12 +126,12 @@
         var containerHeight = containerElement.clientHeight;
         var containerArea = containerWidth * containerHeight;
         var tileSize = Math.floor(Math.sqrt(containerArea / minimumAreaTiles));
-        var width = Math.floor(containerWidth / tileSize);
+        var width = Math.ceil(containerWidth / tileSize);
         if (width < minimumDimension) {
             width = minimumDimension;
             tileSize = Math.ceil(minimumAreaTiles / width);
         }
-        var height = Math.floor(containerHeight / tileSize);
+        var height = Math.ceil(containerHeight / tileSize);
         if (height < minimumDimension) {
             height = minimumDimension;
             tileSize = Math.ceil(minimumAreaTiles / height);
@@ -127,8 +141,12 @@
             return [];
         });
 
-        canvasElement.width = width * tileSize;
-        canvasElement.height = height * tileSize;
+        canvasElement.width = containerWidth;
+        canvasElement.height = containerHeight;
+
+        let renderOffsetX = Math.ceil((containerWidth - width * tileSize) / 2);
+        let renderOffsetY = Math.ceil((containerHeight - height * tileSize) / 2);
+        let outlineWidth = Math.max(1, tileSize / 24);
 
         for (let classification = CLASSIFICATION_MIN_INDEX; classification <= CLASSIFICATION_MAX_INDEX; classification++) {
             let classificationMatrixPopulators = matrixPopulators[classification];
@@ -136,48 +154,60 @@
             if (classificationMatrixPopulators && classificationValidEntityTypes) {
                 var matrixPopulatorIndex = levelRng(classificationMatrixPopulators.length);
                 var matrixPopulator = classificationMatrixPopulators[matrixPopulatorIndex];
-                matrixPopulator(matrix, classificationValidEntityTypes, stateKey.z, entityRng);
+                matrixPopulator(stateKey, matrix, classificationValidEntityTypes, stateKey.z, entityRng);
             }
         }
 
         // add in the player entities
-        for (let i in stateKey.players) {
-            let playerDescription = stateKey.players[i];
-            let ii = parseInt(i);
-            
-            // find a free spot for the player to start in
-            // TODO actually search for the spot
+        let index = 0;
+        let done = false;
+        let entryPoint = stateKey.playerEntryPoint;
+        let playerIndex = 0;
+        while (!done) {
             let pos: IPoint;
-            switch (stateKey.playerEntryPoint) {
+            switch (entryPoint) {
                 case DIRECTION_NORTH:
                     pos = {
-                        x: Math.round(width / 2) + ii,
+                        x: index,
                         y: 0
                     }
                     break;
                 default:
                 case DIRECTION_SOUTH:
                     pos = {
-                        x: Math.round(width / 2)+ii,
+                        x: index,
                         y: height - 1
                     }
                     break;
                 case DIRECTION_EAST:
                     pos = {
                         x: width - 1,
-                        y: Math.round(height / 2)+ii
+                        y: index
                     }
                     break;
                 case DIRECTION_WEST:
                     pos = {
                         x: 0,
-                        y: Math.round(height / 2)+ii
+                        y: index
                     }
                     break;
             }
-            matrix.tiles[pos.x][pos.y].push(playerDescription);
+            if (pos.x < matrix.width && pos.y < matrix.height) {
+                index++;
+                let entities = matrix.tiles[pos.x][pos.y];
+                if (!entities.length) {
+                    let playerDescription = stateKey.players[playerIndex];
+                    entities.push(playerDescription);
+                    playerIndex++;
+                    if (stateKey.players.length <= playerIndex) {
+                        done = true;
+                    } 
+                }
+            } else {
+                index = 0;
+                entryPoint = (entryPoint + 1) % 5 + 1;
+            }
         }
-
 
 
         let entities: ILevelPlayEntity[] = [];
@@ -198,7 +228,15 @@
                     } else {
                         padding = Math.ceil(tileSize / 5);
                     }
-                    let fitResult = fit(entityType.character, tileSize, entityType.backgroundColor == null, padding, context);
+                    let fitResult = fit(
+                        entityType.character,
+                        tileSize,
+                        entityType.backgroundColor == null,
+                        entityType.bold,
+                        entityType.outline?outlineWidth:0,
+                        padding,
+                        context
+                    );
                     let renderMask = fitResult.canvas;
                     let textWidth = renderMask.width;
                     let textHeight = renderMask.height;
@@ -218,8 +256,7 @@
                         y: ty * tileSize + (tileSize - textHeight) / 2,
                         width: entityWidth,
                         height: entityHeight,
-                        baseWidth: entityWidth,
-                        baseHeight: entityHeight,
+                        orientation: ORIENTATION_FACING_RIGHT_FEET_DOWN,
                         rotation: 0,
                         offsetX: fitResult.textOffsetX,
                         offsetY: fitResult.textOffsetY,
@@ -240,6 +277,10 @@
         return {
             type: STATE_LEVEL_PLAY,
             value: {
+                key: stateKey,
+                renderOffsetX: renderOffsetX, 
+                renderOffsetY: renderOffsetY,
+                outlineWidth: outlineWidth,
                 entities: entities,
                 matrix: entityMatrix,
                 width: width, 

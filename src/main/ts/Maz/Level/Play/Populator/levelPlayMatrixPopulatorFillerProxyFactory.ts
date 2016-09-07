@@ -54,8 +54,8 @@
         }
     }
 
-    return function (matrix: ILevelPlayMatrix<ILevelPlayEntityDescription[]>, validEntityTypes: IEntityType[], difficulty: number, rng: IRandomNumberGenerator) {
-        proxied(matrix, validEntityTypes, difficulty, rng);
+    return function (stateKey: ILevelPlayStateKey, matrix: ILevelPlayMatrix<ILevelPlayEntityDescription[]>, validEntityTypes: IEntityType[], difficulty: number, rng: IRandomNumberGenerator) {
+        proxied(stateKey, matrix, validEntityTypes, difficulty, rng);
         let points: IPoint[] = [];
         for (let x = 0; x < matrix.width; x++) {
             for (let y = 0; y < matrix.height; y++) {

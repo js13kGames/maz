@@ -26,6 +26,7 @@
                 foregroundColor: '#DEE',
                 children: [],
                 character: '#',
+                bold: true,
                 classification: CLASSIFICATION_WALL,
                 speed: 0,
                 collisionHandlers: wallCollisionHandlers
@@ -41,57 +42,65 @@
                 }
             ];
             entityTypes[CLASSIFICATION_MONSTER] = [{
-                foregroundColor: COLOR_WHITE,
+                foregroundColor: COLOR_RED,
                 character: 'a',
+                outline: true,
                 children: [],
                 classification: CLASSIFICATION_MONSTER,
                 speed: 0.1,
                 collisionHandlers: monsterCollisionHandlers
             }, {
-                foregroundColor: COLOR_WHITE,
+                foregroundColor: COLOR_RED,
                 character: 'e',
+                outline: true,
                 children: [],
                 classification: CLASSIFICATION_MONSTER,
                 speed: 0.1,
                 collisionHandlers: monsterCollisionHandlers
             }, {
-                foregroundColor: COLOR_WHITE,
+                foregroundColor: COLOR_RED,
                 character: 'i',
+                outline: true,
                 children: [],
                 classification: CLASSIFICATION_MONSTER,
                 speed: 0.1,
                 collisionHandlers: monsterCollisionHandlers
             }, {
-                foregroundColor: COLOR_WHITE,
+                foregroundColor: COLOR_RED,
                 character: 'o',
+                outline: true,
                 children: [],
                 classification: CLASSIFICATION_MONSTER,
                 speed: 0.1,
                 collisionHandlers: monsterCollisionHandlers
             }, {
-                foregroundColor: COLOR_WHITE,
+                foregroundColor: COLOR_RED,
                 character: 'u',
+                outline: true,
                 children: [],
                 classification: CLASSIFICATION_MONSTER,
                 speed: 0.1,
                 collisionHandlers: monsterCollisionHandlers
             }, {
-                foregroundColor: COLOR_WHITE,
+                foregroundColor: COLOR_RED,
                 character: 'n',
+                outline: true,
                 children: [],
                 classification: CLASSIFICATION_MONSTER,
                 speed: 0.1,
                 collisionHandlers: monsterCollisionHandlers
             }, {
-                foregroundColor: COLOR_WHITE,
+                foregroundColor: COLOR_RED,
                 character: 's',
+                outline: true,
                 children: [],
                 classification: CLASSIFICATION_MONSTER,
                 speed: 0.1,
                 collisionHandlers: monsterCollisionHandlers
             }, {
-                foregroundColor: COLOR_WHITE,
+                foregroundColor: COLOR_RED,
                 character: 'c',
+                outline: true,
                 children: [],
                 classification: CLASSIFICATION_MONSTER,
                 speed: 0.1,
@@ -128,6 +137,10 @@
             var playerType: IEntityType = {
                 foregroundColor: COLOR_WHITE,
                 character: '@',
+                //character: '➯',
+                //character: '\ud83d\ude03',
+                //character: '☻',
+                bold: true,
                 children: [],
                 classification: CLASSIFICATION_MONSTER,
                 speed: 0.0025,

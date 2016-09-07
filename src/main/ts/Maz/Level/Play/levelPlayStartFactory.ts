@@ -3,10 +3,14 @@
     context: CanvasRenderingContext2D,
     entityUpdate: (mind: IRecord<LevelPlayEntityMind>, state: ILevelPlayState, entity: ILevelPlayEntity) => ILevelPlayEntityMindUpdateResult,
     inputs: { [_: number]: IInputAtomic },
-    maxCollisionSteps: number
+    maxCollisionSteps: number,
+    recordEasingFunction: IRecordEasingFunction,
+    recordContextEffectFunction: IRecordContextEffectFunction
 ): IStateStartFunction {
 
-    function render(state: ILevelPlayState, dirtyTiles: ILevelPlayMatrix<boolean>) {
+    function render(state: ILevelPlayState, dirtyTiles: ILevelPlayMatrix<boolean>): void {
+        context.save();
+        context.translate(state.renderOffsetX, state.renderOffsetY);
         for (let tx = dirtyTiles.width; tx > 0;) {
             tx--;
             let dirtyTilesX = dirtyTiles.tiles[tx];
@@ -25,9 +29,19 @@
                     for (let entity of entitiesXY) {
                         if (!entity.renderNotDirty) {
                             let renderContext = entity.renderContext;
-                            renderContext.clearRect(0, 0, entity.baseWidth, entity.baseHeight);
+                            renderContext.clearRect(0, 0, entity.width, entity.height);
 
-                            renderContext.drawImage(entity.renderMask, 0, 0);
+                            // render unrotated/flipped
+                            
+                            let orientationTransformation = ORIENTATION_TRANSFORMATIONS[entity.orientation];
+                            renderContext.save();
+                            renderContext.translate(entity.width / 2, entity.height / 2);
+                            renderContext.rotate(orientationTransformation.rotate * -Math.PI / 2);
+                            if (orientationTransformation.flipY) {
+                                renderContext.scale(1, -1);
+                            }
+                            renderContext.drawImage(entity.renderMask, -entity.width / 2, -entity.height / 2);
+                            renderContext.restore();
                             renderContext.save();
                             renderContext.globalCompositeOperation = 'source-in';
                             let background = entity.description.type.backgroundColor;
@@ -36,11 +50,16 @@
                             } else {
                                 renderContext.fillStyle = entity.description.type.foregroundColor;
                             }
-                            renderContext.fillRect(0, 0, entity.baseWidth, entity.baseHeight);
+                            renderContext.fillRect(0, 0, entity.width, entity.height);
+                            renderContext.globalCompositeOperation = 'source-atop';
                             if (background) {
-                                renderContext.globalCompositeOperation = 'source-atop';
                                 renderContext.fillStyle = entity.description.type.foregroundColor;
                                 renderContext.fillText(entity.description.type.character, entity.offsetX, entity.offsetY);
+                            }
+                            if (entity.description.type.outline) {
+                                renderContext.strokeStyle = COLOR_WHITE;
+                                renderContext.lineWidth = state.outlineWidth;
+                                renderContext.strokeText(entity.description.type.character, entity.offsetX, entity.offsetY);
                             }
                             renderContext.restore();
 
@@ -49,12 +68,17 @@
 
                             for (let animationId in entity.animations) {
                                 let animation = entity.animations[animationId];
+                                let done = true;
                                 for (let tween of animation.tweens) {
                                     let t: number;
                                     if (tween.repeat) {
                                         t = (animation.age % tween.durationMillis) / tween.durationMillis;
+                                        done = false;
                                     } else {
                                         t = Math.min(1, animation.age / tween.durationMillis);
+                                        if (t < 1) {
+                                            done = false;
+                                        }
                                     }
                                     let p = recordEasingFunction(tween.easing, t);
 
@@ -66,11 +90,25 @@
                                     recordContextEffectFunction(tween.effect, p, previousCanvas, canvas, context);
                                     context.restore();
                                     previousCanvas = canvas;
-
+                                }
+                                if (done) {
+                                    delete entity.animations[animationId];
                                 }
                             }
-                            entity.render = previousCanvas;
-                            entity.renderContext = previousCanvas.getContext('2d');
+                            if (previousCanvas != entity.render) {
+                                // re-rotate/flip
+                                renderContext.clearRect(0, 0, entity.width, entity.height);
+                                renderContext.save();
+                                renderContext.translate(entity.width / 2, entity.height / 2);
+                                if (orientationTransformation.flipY) {
+                                    renderContext.scale(1, -1);
+                                }
+                                renderContext.rotate(Math.PI / 2 * orientationTransformation.rotate);
+                                renderContext.drawImage(previousCanvas, -entity.width / 2, -entity.height / 2);
+                                renderContext.restore();
+                            //entity.render = previousCanvas;
+                            //entity.renderContext = previousCanvas.getContext('2d');
+                            }
 
                             entity.renderNotDirty = true;
                         }
@@ -99,6 +137,7 @@
                 }
             }
         }
+        context.restore();
     }
 
     function getCollisionHandler(fromEntity: ILevelPlayEntity, withEntity: ILevelPlayEntity) {
@@ -132,11 +171,13 @@
         }
 
 
-        function update(state: ILevelPlayState, duration: number) {
+        function update(state: ILevelPlayState, duration: number): boolean {
+            let result: boolean;
             let checkEntities: ILevelPlayEntity[] = [];
             for (let i = state.entities.length; i > 0;) {
                 i--;
                 let entity = state.entities[i];
+                entity.updateStartOrientation = entity.orientation;
                 let updateResult = entityUpdate(entity.description.mind, state, entity);
                 // deal with new entities
                 if (updateResult) {
@@ -158,6 +199,9 @@
                             entity.animations[newAnimationId] = newAnimation;
                         }
                     }
+                    if (updateResult.newState) {
+                        result = nextStateCallback(updateResult.newState);
+                    }
                 }
 
                 // deal with dead entities
@@ -169,6 +213,9 @@
                     entity.updateStartX = entity.x;
                     entity.updateStartY = entity.y;
                     entity.updateDurationOffset = 0;
+
+                    rotateRenderMask(entity, entity.updateStartOrientation, entity.orientation);
+
                     if (entity.velocityX || entity.velocityY) {
                         levelPlayEntityMatrixRemove(state.matrix, state.tileSize, entity);
                         setEntityDirty(entity);
@@ -254,6 +301,7 @@
                     }
                     if (minCollisionEntity) {
                         // back out to the min collision time and adjust position (and velocity, and whatever else our 'physics' engine handles
+                        /*
                         if (minCheckEntityCollisionHandler) {
                             if (minCheckEntityCollisionHandler.collisionResolution.type == COLLISION_RESOLUTION_TYPE_SOLID) {
                                 levelPlayEntityMatrixRemove(state.matrix, state.tileSize, checkEntity);
@@ -274,38 +322,117 @@
                                 newCheckEntities.push(checkEntity);
                             }
                         }
-
-                        if (minCollisionEntityCollisionHandler) {
-
-                            if (minCollisionEntityCollisionHandler.collisionResolution.type == COLLISION_RESOLUTION_TYPE_SOLID) {
-                                levelPlayEntityMatrixRemove(state.matrix, state.tileSize, minCollisionEntity);
-
-                                minCollisionEntity.x = minCollisionEntity.updateStartX + (minCollisionEntity.velocityX * minCollisionTime) / state.tileSize;
-                                minCollisionEntity.y = minCollisionEntity.updateStartY + (minCollisionEntity.velocityY * minCollisionTime) / state.tileSize;
-                                minCollisionEntity.velocityX = 0;
-                                minCollisionEntity.velocityY = 0;
-
-                                levelPlayEntityMatrixAdd(state.matrix, state.tileSize, minCollisionEntity);
-                                setEntityDirty(minCollisionEntity);
-
-                            } else if (minCollisionEntityCollisionHandler.collisionResolution.type == COLLISION_RESOLUTION_TYPE_EAT) {
-                                checkEntity.dead = true;
-                            }
-
-                            if (minCollisionEntity.updateDurationOffset < minCollisionTime) {
-                                minCollisionEntity.updateDurationOffset = minCollisionTime;
-                                // this might be getting added multiple times
-                                if (!arrayContains(newCheckEntities, minCollisionEntity)) {
-                                    newCheckEntities.push(minCollisionEntity);
-                                }
-                            }
-                        }
-
+                        */
+                        handleCollision(minCheckEntityCollisionHandler, minCollisionTime, checkEntity, minCollisionEntity, newCheckEntities);
+                        handleCollision(minCollisionEntityCollisionHandler, minCollisionTime, minCollisionEntity, checkEntity, newCheckEntities);
                         // TODO exclude from future collisions if the collisions are at zero duration
                     }
                 }
                 checkEntities = newCheckEntities;
             } while (checkEntities.length);
+            return result;
+        }
+
+        function handleCollision(collisionHandler: ICollisionHandler, collisionTime: number, entity: ILevelPlayEntity, withEntity: ILevelPlayEntity, checkEntities: ILevelPlayEntity[]) {
+            if (collisionHandler) {
+
+                if (collisionHandler.collisionResolution.type == COLLISION_RESOLUTION_TYPE_SOLID) {
+                    levelPlayEntityMatrixRemove(state.matrix, state.tileSize, entity);
+
+                    entity.x = entity.updateStartX + (entity.velocityX * collisionTime) / state.tileSize;
+                    entity.y = entity.updateStartY + (entity.velocityY * collisionTime) / state.tileSize;
+                    if (entity.velocityX != 0 || entity.velocityY != 0) {
+                        entity.velocityX = 0;
+                        entity.velocityY = 0;
+                    } else {
+                        // reset the rotation too!
+                        rotateRenderMask(entity, entity.orientation, entity.updateStartOrientation);
+                        entity.orientation = entity.updateStartOrientation;
+                        // TODO remove any rotation animations
+                    }
+
+                    levelPlayEntityMatrixAdd(state.matrix, state.tileSize, entity);
+                    setEntityDirty(entity);
+
+                } else if (collisionHandler.collisionResolution.type == COLLISION_RESOLUTION_TYPE_EAT) {
+                    withEntity.dead = true;
+                }
+
+                if (entity.updateDurationOffset < collisionTime) {
+                    entity.updateDurationOffset = collisionTime;
+                    // this might be getting added multiple times
+                    if (!arrayContains(checkEntities, entity)) {
+                        checkEntities.push(entity);
+                    }
+                }
+            }
+        }
+
+        function rotateRenderMask(entity: ILevelPlayEntity, fromOrientation: Orientation, toOrientation: Orientation) {
+            if (toOrientation != fromOrientation) {
+                let fromOrientationTransformation = ORIENTATION_TRANSFORMATIONS[fromOrientation];
+                let toOrientationTransformation = ORIENTATION_TRANSFORMATIONS[toOrientation];
+                let fromCount = (4 - fromOrientationTransformation.rotate) % 4;
+                rotate(entity, fromCount);
+                if (fromOrientationTransformation.flipY && !toOrientationTransformation.flipY || !fromOrientationTransformation.flipY && toOrientationTransformation.flipY) {
+                    flipY(entity);
+                }
+                rotate(entity, toOrientationTransformation.rotate);
+            }
+        }
+
+        function rotate(entity: ILevelPlayEntity, count: number) {
+            while (count > 0) {
+                count--;
+                let width = entity.renderMask.width;
+                let height = entity.renderMask.height;
+                let originalData = entity.renderMask.getContext('2d').getImageData(0, 0, width, height);
+                entity.renderMask.width = height;
+                entity.renderMask.height = width;
+                let context = entity.renderMask.getContext('2d');
+                let newData = context.getImageData(0, 0, height, width);
+                for (let y = 0; y < height; y++) {
+                    let originalYoff = y * width * 4;
+                    let newX = (height - y - 1);
+                    let newXoff = newX * 4;
+                    for (let x = 0; x < width; x++) {
+                        let originalXoff = originalYoff + x * 4;
+                        let newY = x;
+                        let newYoff = newY * height * 4 + newXoff;
+                        for (let i = 0; i < 4; i++) {
+                            newData.data[newYoff + i] = originalData.data[originalXoff + i];
+                        }
+                    }
+                }
+                context.putImageData(newData, 0, 0);
+            }
+        }
+
+        function flipY(entity: ILevelPlayEntity) {
+            let width = entity.renderMask.width;
+            let height = entity.renderMask.height;
+            let context = entity.renderMask.getContext('2d');
+            let data = context.getImageData(0, 0, width, height);
+            let midY = Math.floor(height / 2);
+            for (let y = 0; y < midY; y++) {
+                let newY = height - y - 1;
+                if (newY != y) {
+                    let originalYoff = y * width * 4;
+                    let newYoff = newY * width * 4;
+                    for (let x = 0; x < width; x++) {
+                        let xoff = x * 4;
+                        let originalXoff = originalYoff + xoff;
+                        let newXoff = newYoff + xoff;
+                        for (let i = 0; i < 4; i++) {
+                            let tmp = data.data[newXoff + i];
+                            data.data[newXoff + i] = data.data[originalXoff + i];
+                            data.data[originalXoff + i] = tmp;
+                        }
+                    }
+                }
+            }
+            context.putImageData(data, 0, 0);
+
         }
 
         function overlaps(entity1: ILevelPlayEntity, bounds1: IRectangle, entity2: ILevelPlayEntity, bounds2: IRectangle): boolean {
@@ -345,18 +472,14 @@
 
             var diff = Math.max(1, Math.min(100, now - lastUpdate));
             lastUpdate = now;
-            update(state, diff);
-
-            render(state, dirtyTiles);
-
-            runner.animationFrameRequestId = requestAnimationFrame(animationCallback);
+            let done = update(state, diff);
+            if (!done) {
+                render(state, dirtyTiles);
+                runner.animationFrameRequestId = requestAnimationFrame(animationCallback);
+            }
         };
 
         var animationFrameRequestId = requestAnimationFrame(animationCallback);
-
-        var runner: ILevelPlayStateRunner = {
-            animationFrameRequestId: animationFrameRequestId
-        };
 
         document.onkeydown = function (e: KeyboardEvent) {
             let input = inputs[e.keyCode];
@@ -371,6 +494,68 @@
             if (input) {
                 input.active = false;
             }
+        };
+        let xDown;
+        let yDown;
+        let minDiff = state.tileSize;
+        let touchStart = function (evt: TouchEvent) {
+            let touch = evt.touches[0];
+            xDown = touch.clientX;
+            yDown = touch.clientY;
+            evt.preventDefault();
+        };
+        let touchMove = function (evt: TouchEvent) {
+            if (xDown && yDown) {
+                let touch = evt.touches[0];
+                let xDiff = touch.clientX - xDown;
+                let yDiff = touch.clientY - yDown;
+
+                let xDiffAbs = Math.abs(xDiff);
+                let yDiffAbs = Math.abs(yDiff);
+
+                if (xDiffAbs > minDiff || yDiffAbs > minDiff) {
+                    let input: InputAtomicId;
+                    if (xDiffAbs > yDiffAbs) {
+                        if (xDiff > 0) {
+                            input = INPUT_ATOMIC_ID_RIGHT;
+                        } else {
+                            input = INPUT_ATOMIC_ID_LEFT;
+                        }
+                    } else {
+                        if (yDiff > 0) {
+                            input = INPUT_ATOMIC_ID_DOWN;
+                        } else {
+                            input = INPUT_ATOMIC_ID_UP;
+                        }
+                    }
+                    inputs[input].unread = true;
+
+                    xDown = null;
+                    yDown = null;
+                }
+            }
+            evt.preventDefault();
+        };
+        let touchEnd = function (evt: TouchEvent) {
+            if (xDown && yDown) {
+                // it's a tap
+                inputs[INPUT_ATOMIC_ID_ACTION].unread = true;
+            }
+            evt.preventDefault();
+        };
+
+        let eventListeners: { [_: string]: EventListener } = {};
+        eventListeners['touchstart'] = touchStart;
+        eventListeners['touchmove'] = touchMove;
+        eventListeners['touchend'] = touchEnd;
+
+        for (let key in eventListeners) {
+            document.addEventListener(key, eventListeners[key]);
+        }
+
+        var runner: ILevelPlayStateRunner = {
+            animationFrameRequestId: animationFrameRequestId,
+            eventListeners: eventListeners
         };
 
         return {

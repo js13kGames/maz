@@ -27,9 +27,9 @@
                 effect: {
                     type: EFFECT_SCALE,
                     value: {
-                        xStart: 0.8,
+                        xStart: 0.7,
                         yStart: 1,
-                        dx: 0.4,
+                        dx: 0.5,
                         dy: 0,
                         cx: 0.5, 
                         cy: 0.8
@@ -47,7 +47,7 @@
                     type: EFFECT_TRANSLATE,
                     value: {
                         xStart: 0,
-                        yStart: 0,
+                        yStart: 0.05 * height,
                         dx: 0,
                         dy: -0.1 * height
                     }

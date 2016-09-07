@@ -4,7 +4,7 @@
         if (entity.description.type.speed) {
             if (!entity.animations['x']) {
                 result.newAnimations = {
-                    x: animationMotionHop(300 + state.rng(100), entity.baseWidth, entity.baseHeight)
+                    x: animationMotionHop(300, entity.width, entity.height)
                 };
             }
         }

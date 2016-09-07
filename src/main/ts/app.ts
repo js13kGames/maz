@@ -1,32 +1,54 @@
-﻿window.onload = function () {
+﻿let ORIENTATION_TRANSFORMATIONS: { [_: number]: IOrientationTransformation };
 
-    var minTiles = 348;
-    var tileMargin = 0.05;
+window.onload = function () {
 
-    var matrixPopulators: { [_: number]: ILevelPlayMatrixPopulator[] } = {};
-    matrixPopulators[CLASSIFICATION_WALL] = [
-        levelPlayMatrixPopulatorFillerProxyFactory(levelPlayMatrixPopulatorRectangleFactory(minTiles, false, 0, false)),
-        levelPlayMatrixPopulatorFillerProxyFactory(levelPlayMatrixPopulatorRectangleFactory(minTiles, false, 0, true)),
-        levelPlayMatrixPopulatorFillerProxyFactory(levelPlayMatrixPopulatorRectangleFactory(minTiles, false, 0.2, false)),
-        levelPlayMatrixPopulatorFillerProxyFactory(levelPlayMatrixPopulatorRectangleFactory(minTiles, false, 0.5, true)),
-        levelPlayMatrixPopulatorFillerProxyFactory(levelPlayMatrixPopulatorRectangleFactory(minTiles, true, 0, false)),
-        levelPlayMatrixPopulatorFillerProxyFactory(levelPlayMatrixPopulatorRectangleFactory(minTiles, true, 0, true))
-    ];
+    ORIENTATION_TRANSFORMATIONS = initOrientationTransformations();
 
-    let monsterFilter = function (entityDescriptions: ILevelPlayEntityDescription[]) {
-        for (let entityDescription of entityDescriptions) {
-            if (entityDescription.type.classification == CLASSIFICATION_WALL || entityDescription.type.classification == CLASSIFICATION_OBSTACLE) {
-                return false;
-            }
-        }
-        return true;
+    let minTiles = 250;
+    let tileMargin = 0.05;
+
+    let matrixPopulators: { [_: number]: ILevelPlayMatrixPopulator[] } = {};
+
+    let wallEntityType: IEntityType = {
+        backgroundColor: '#AA9',
+        bold: true,
+        character: 'x',
+        classification: CLASSIFICATION_WALL,
+        foregroundColor: '#998',
+        speed: 0,
+        children: [],
+        collisionHandlers: []
     };
 
+    matrixPopulators[CLASSIFICATION_WALL] = [
+        levelPlayMatrixPopulatorBoundaryProxyFactory(levelPlayMatrixPopulatorFillerProxyFactory(levelPlayMatrixPopulatorRectangleFactory(minTiles, false, 0, false)), wallEntityType),
+        levelPlayMatrixPopulatorBoundaryProxyFactory(levelPlayMatrixPopulatorFillerProxyFactory(levelPlayMatrixPopulatorRectangleFactory(minTiles, false, 0, true)), wallEntityType),
+        levelPlayMatrixPopulatorBoundaryProxyFactory(levelPlayMatrixPopulatorFillerProxyFactory(levelPlayMatrixPopulatorRectangleFactory(minTiles, false, 0.2, false)), wallEntityType),
+        levelPlayMatrixPopulatorBoundaryProxyFactory(levelPlayMatrixPopulatorFillerProxyFactory(levelPlayMatrixPopulatorRectangleFactory(minTiles, false, 0.5, true)), wallEntityType),
+        levelPlayMatrixPopulatorBoundaryProxyFactory(levelPlayMatrixPopulatorFillerProxyFactory(levelPlayMatrixPopulatorRectangleFactory(minTiles, true, 0, false)), wallEntityType),
+        levelPlayMatrixPopulatorBoundaryProxyFactory(levelPlayMatrixPopulatorFillerProxyFactory(levelPlayMatrixPopulatorRectangleFactory(minTiles, true, 0, true)), wallEntityType)
+    ];
+
+    function monsterFilterFactory(padding: number) {
+        return function (entityDescriptions: ILevelPlayEntityDescription[], matrix: ILevelPlayMatrix<ILevelPlayEntityDescription[]>, x: number, y: number) {
+            if (x < padding || x >= matrix.width - padding || y < padding || y >= matrix.height - padding) {
+                return false;
+            } else {
+                for (let entityDescription of entityDescriptions) {
+                    if (entityDescription.type.classification == CLASSIFICATION_WALL || entityDescription.type.classification == CLASSIFICATION_OBSTACLE) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        };
+    }
+
     matrixPopulators[CLASSIFICATION_MONSTER] = [
-        levelPlayMatrixPopulatorFloodFillFactory(6, 1, 1, 0, 10, monsterFilter)
+        levelPlayMatrixPopulatorFloodFillFactory(6, 1, 1, 0, 40, monsterFilterFactory(2))
     ];
     matrixPopulators[CLASSIFICATION_COLLECTABLE_COMMON] = [
-        levelPlayMatrixPopulatorFloodFillFactory(1, 0, minTiles, 0, 20, monsterFilter)
+        levelPlayMatrixPopulatorFloodFillFactory(1, 0, minTiles, 0, 20, monsterFilterFactory(1))
     ]
 
     var playerInputs: { [_: number]: IInputAtomic } = {};
@@ -34,6 +56,7 @@
     playerInputs[INPUT_ATOMIC_ID_DOWN] = {};
     playerInputs[INPUT_ATOMIC_ID_LEFT] = {};
     playerInputs[INPUT_ATOMIC_ID_RIGHT] = {};
+    playerInputs[INPUT_ATOMIC_ID_ACTION] = {};
 
     var levelPlayMindUpdateHandlers: { [_: number]: ILevelPlayEntityMindUpdateFunction } = {};
     levelPlayMindUpdateHandlers[MIND_PLAYER_1] = levelPlayEntityMindPlayerUpdateFactory(
@@ -45,6 +68,8 @@
         INPUT_ATOMIC_ID_RIGHT
     );
     levelPlayMindUpdateHandlers[MIND_MONSTER] = levelPlayEntityMindMonsterUpdateFactory();
+    // do nothing
+    levelPlayMindUpdateHandlers[MIND_INERT] = <any>function () { };
 
     var levelPlayMindHandler = recordHandlerDelegateFactory(levelPlayMindUpdateHandlers);
 
@@ -78,7 +103,9 @@
         levelPlayContext,
         levelPlayMindHandler,
         playerInputs,
-        5
+        5,
+        easingInit(), 
+        effectInit()
     );
     var startHandler = recordHandlerDelegateFactory(startHandlers);
 
@@ -94,6 +121,7 @@
         currentStateKey = nextStateKey;
         currentState = initHandler(nextStateKey);
         currentStateRunner = startHandler(currentState, callback);
+        return true;
     };
     var currentStateKey = null;
     var currentState = introInit(currentStateKey);
