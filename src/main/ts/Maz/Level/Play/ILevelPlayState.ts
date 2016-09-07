@@ -8,5 +8,7 @@
     width: number,
     height: number,
     tileSize: number,
-    rng: IRandomNumberGenerator
+    rng: IRandomNumberGenerator,
+    ageMillis: number,
+    tween?: ITween
 }

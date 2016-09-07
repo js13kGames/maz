@@ -116,7 +116,7 @@ window.onload = function () {
 
     var callback: IStateCompleteCallback = function (nextStateKey: IRecord<StateKey>) {
         if (currentStateRunner) {
-            stopHandler(currentStateRunner);
+            stopHandler(currentStateRunner, nextStateKey);
         }
         currentStateKey = nextStateKey;
         currentState = initHandler(nextStateKey);

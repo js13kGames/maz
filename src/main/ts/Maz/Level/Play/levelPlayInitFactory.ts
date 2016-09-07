@@ -141,8 +141,10 @@
             return [];
         });
 
-        canvasElement.width = containerWidth;
-        canvasElement.height = containerHeight;
+        if (canvasElement.width != containerWidth || canvasElement.height != containerHeight) {
+            canvasElement.width = containerWidth;
+            canvasElement.height = containerHeight;
+        }
 
         let renderOffsetX = Math.ceil((containerWidth - width * tileSize) / 2);
         let renderOffsetY = Math.ceil((containerHeight - height * tileSize) / 2);
@@ -274,6 +276,12 @@
             }
         }
 
+        let previousCanvas = document.createElement('canvas');
+        previousCanvas.width = containerWidth;
+        previousCanvas.height = containerHeight;
+        let previousContext = previousCanvas.getContext('2d');
+        previousContext.drawImage(canvasElement, 0, 0);
+
         return {
             type: STATE_LEVEL_PLAY,
             value: {
@@ -286,7 +294,8 @@
                 width: width, 
                 height: height,
                 tileSize: tileSize,
-                rng: entityRng
+                rng: entityRng,
+                ageMillis: 0
             }
         }
     }

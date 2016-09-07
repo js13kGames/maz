@@ -8,9 +8,9 @@
     recordContextEffectFunction: IRecordContextEffectFunction
 ): IStateStartFunction {
 
-    function render(state: ILevelPlayState, dirtyTiles: ILevelPlayMatrix<boolean>): void {
-        context.save();
-        context.translate(state.renderOffsetX, state.renderOffsetY);
+    function render(state: ILevelPlayState, dirtyTiles: ILevelPlayMatrix<boolean>, dx: number, dy: number, redraw: boolean): void {
+        context.save();        
+        context.translate(dx, dy);
         for (let tx = dirtyTiles.width; tx > 0;) {
             tx--;
             let dirtyTilesX = dirtyTiles.tiles[tx];
@@ -18,7 +18,7 @@
             let x = tx * state.tileSize;
             for (let ty = dirtyTiles.height; ty > 0;) {
                 ty--;
-                let dirtyTileXY = dirtyTilesX[ty];
+                let dirtyTileXY = dirtyTilesX[ty] || redraw;
                 if (dirtyTileXY) {
                     let entitiesXY = entitiesX[ty];
                     let y = ty * state.tileSize;
@@ -87,7 +87,13 @@
                                     canvas.height = previousCanvas.height;
                                     let context = canvas.getContext('2d');
                                     context.save();
-                                    recordContextEffectFunction(tween.effect, p, previousCanvas, canvas, context);
+                                    recordContextEffectFunction(
+                                        tween.effect,
+                                        p,
+                                        recordContextEffectRenderCanvasFactory(previousCanvas),
+                                        canvas,
+                                        context
+                                    );
                                     context.restore();
                                     previousCanvas = canvas;
                                 }
@@ -171,165 +177,171 @@
         }
 
 
-        function update(state: ILevelPlayState, duration: number): boolean {
+        function update(state: ILevelPlayState, duration: number, paused: boolean): boolean {
             let result: boolean;
             let checkEntities: ILevelPlayEntity[] = [];
             for (let i = state.entities.length; i > 0;) {
                 i--;
                 let entity = state.entities[i];
-                entity.updateStartOrientation = entity.orientation;
-                let updateResult = entityUpdate(entity.description.mind, state, entity);
-                // deal with new entities
-                if (updateResult) {
-                    if (updateResult.newEntities) {
-                        for (let newEntity of updateResult.newEntities) {
-                            state.entities.push(newEntity);
-                            // NOTE do we need to check the new entity?
+                if (!paused) {
+                    entity.updateStartOrientation = entity.orientation;
+                    let updateResult = entityUpdate(entity.description.mind, state, entity);
+                    // deal with new entities
+                    if (updateResult) {
+                        if (updateResult.newEntities) {
+                            for (let newEntity of updateResult.newEntities) {
+                                state.entities.push(newEntity);
+                                // NOTE do we need to check the new entity?
+                            }
+                        }
+                        if (updateResult.deletedAnimationIds) {
+                            for (let deletedAnimationId of updateResult.deletedAnimationIds) {
+                                delete entity.animations[deletedAnimationId];
+                            }
+                        }
+                        if (updateResult.newAnimations) {
+                            for (let newAnimationId in updateResult.newAnimations) {
+                                let newAnimation = updateResult.newAnimations[newAnimationId];
+                                newAnimation.age = 0;
+                                entity.animations[newAnimationId] = newAnimation;
+                            }
+                        }
+                        if (updateResult.newState) {
+                            nextStateCallback(updateResult.newState);
+                            result = true;
                         }
                     }
-                    if (updateResult.deletedAnimationIds) {
-                        for (let deletedAnimationId of updateResult.deletedAnimationIds) {
-                            delete entity.animations[deletedAnimationId];
-                        }
-                    }
-                    if (updateResult.newAnimations) {
-                        for (let newAnimationId in updateResult.newAnimations) {
-                            let newAnimation = updateResult.newAnimations[newAnimationId];
-                            newAnimation.age = 0;
-                            entity.animations[newAnimationId] = newAnimation;
-                        }
-                    }
-                    if (updateResult.newState) {
-                        result = nextStateCallback(updateResult.newState);
-                    }
-                }
-
-                // deal with dead entities
-                if (entity.dead) {
-                    state.entities.splice(i, 1);
-                    setEntityDirty(entity);
-                    levelPlayEntityMatrixRemove(state.matrix, state.tileSize, entity);
-                } else {
-                    entity.updateStartX = entity.x;
-                    entity.updateStartY = entity.y;
-                    entity.updateDurationOffset = 0;
-
-                    rotateRenderMask(entity, entity.updateStartOrientation, entity.orientation);
-
-                    if (entity.velocityX || entity.velocityY) {
+                    // deal with dead entities
+                    if (entity.dead) {
+                        state.entities.splice(i, 1);
+                        setEntityDirty(entity);
                         levelPlayEntityMatrixRemove(state.matrix, state.tileSize, entity);
-                        setEntityDirty(entity);
+                    } else {
+                        entity.updateStartX = entity.x;
+                        entity.updateStartY = entity.y;
+                        entity.updateDurationOffset = 0;
 
-                        entity.x += entity.velocityX * duration * state.tileSize;
-                        entity.y += entity.velocityY * duration * state.tileSize;
-                        checkEntities.push(entity);
+                        rotateRenderMask(entity, entity.updateStartOrientation, entity.orientation);
 
-                        levelPlayEntityMatrixAdd(state.matrix, state.tileSize, entity);
-                        setEntityDirty(entity);
-
-                    }
-                    let first = true;
-                    for (let animationId in entity.animations) {
-                        let animation = entity.animations[animationId];
-                        if (first) {
+                        if (entity.velocityX || entity.velocityY) {
+                            levelPlayEntityMatrixRemove(state.matrix, state.tileSize, entity);
                             setEntityDirty(entity);
-                            first = false;
+
+                            entity.x += entity.velocityX * duration * state.tileSize;
+                            entity.y += entity.velocityY * duration * state.tileSize;
+                            checkEntities.push(entity);
+
+                            levelPlayEntityMatrixAdd(state.matrix, state.tileSize, entity);
+                            setEntityDirty(entity);
+
                         }
-                        animation.age += duration;
                     }
                 }
 
+                let first = true;
+                for (let animationId in entity.animations) {
+                    let animation = entity.animations[animationId];
+                    if (first) {
+                        setEntityDirty(entity);
+                        first = false;
+                    }
+                    // TODO only update repeating animations if paused
+                    animation.age += duration;
+                }
             }
 
             // deal with collisions
-            do {
-                let newCheckEntities: ILevelPlayEntity[] = [];
+            if (!paused) {
+                do {
+                    let newCheckEntities: ILevelPlayEntity[] = [];
 
-                for (let i = checkEntities.length; i > 0;) {
-                    i--;
-                    let checkEntity = checkEntities[i];
-                    let minCollisionTime: number;
-                    let minCollisionEntity: ILevelPlayEntity;
-                    let minCollisionEntityCollisionHandler: ICollisionHandler;
-                    let minCheckEntityCollisionHandler: ICollisionHandler;
-                    let collidableEntities = levelPlayMatrixList(state.matrix, state.tileSize, checkEntity);
-                    for (let collidableEntity of collidableEntities) {
+                    for (let i = checkEntities.length; i > 0;) {
+                        i--;
+                        let checkEntity = checkEntities[i];
+                        let minCollisionTime: number;
+                        let minCollisionEntity: ILevelPlayEntity;
+                        let minCollisionEntityCollisionHandler: ICollisionHandler;
+                        let minCheckEntityCollisionHandler: ICollisionHandler;
+                        let collidableEntities = levelPlayMatrixList(state.matrix, state.tileSize, checkEntity);
+                        for (let collidableEntity of collidableEntities) {
 
-                        // do they overlap?
-                        if (checkEntity != collidableEntity && !checkEntity.dead && !collidableEntity.dead && overlaps(checkEntity, checkEntity, collidableEntity, collidableEntity)) {
+                            // do they overlap?
+                            if (checkEntity != collidableEntity && !checkEntity.dead && !collidableEntity.dead && overlaps(checkEntity, checkEntity, collidableEntity, collidableEntity)) {
 
-                            // do they interact in any way?
-                            let checkEntityCollisionHandler = getCollisionHandler(checkEntity, collidableEntity);
-                            let collisionHandler = getCollisionHandler(collidableEntity, checkEntity);
+                                // do they interact in any way?
+                                let checkEntityCollisionHandler = getCollisionHandler(checkEntity, collidableEntity);
+                                let collisionHandler = getCollisionHandler(collidableEntity, checkEntity);
 
-                            if (checkEntityCollisionHandler != null || collisionHandler != null) {
-                                // work out when they collided by stepping back 
-                                let startTime = Math.max(checkEntity.updateDurationOffset, collidableEntity.updateDurationOffset);
-                                let endTime = duration;
-                                let entityBounds: any = {
-                                    width: collidableEntity.width,
-                                    height: collidableEntity.height
-                                };
-                                let checkEntityBounds: any = {
-                                    width: checkEntity.width,
-                                    height: checkEntity.height
-                                };
-                                for (let step = 0; step < maxCollisionSteps; step++) {
-                                    let collisionTime = (endTime + startTime) / 2;
+                                if (checkEntityCollisionHandler != null || collisionHandler != null) {
+                                    // work out when they collided by stepping back 
+                                    let startTime = Math.max(checkEntity.updateDurationOffset, collidableEntity.updateDurationOffset);
+                                    let endTime = duration;
+                                    let entityBounds: any = {
+                                        width: collidableEntity.width,
+                                        height: collidableEntity.height
+                                    };
+                                    let checkEntityBounds: any = {
+                                        width: checkEntity.width,
+                                        height: checkEntity.height
+                                    };
+                                    for (let step = 0; step < maxCollisionSteps; step++) {
+                                        let collisionTime = (endTime + startTime) / 2;
 
-                                    entityBounds.x = collidableEntity.updateStartX + (collidableEntity.velocityX * collisionTime) / state.tileSize;
-                                    entityBounds.y = collidableEntity.updateStartY + (collidableEntity.velocityY * collisionTime) / state.tileSize;
+                                        entityBounds.x = collidableEntity.updateStartX + (collidableEntity.velocityX * collisionTime) / state.tileSize;
+                                        entityBounds.y = collidableEntity.updateStartY + (collidableEntity.velocityY * collisionTime) / state.tileSize;
 
-                                    checkEntityBounds.x = checkEntity.updateStartX + (checkEntity.velocityX * collisionTime) / state.tileSize;
-                                    checkEntityBounds.y = checkEntity.updateStartY + (checkEntity.velocityY * collisionTime) / state.tileSize;
+                                        checkEntityBounds.x = checkEntity.updateStartX + (checkEntity.velocityX * collisionTime) / state.tileSize;
+                                        checkEntityBounds.y = checkEntity.updateStartY + (checkEntity.velocityY * collisionTime) / state.tileSize;
 
-                                    if (overlaps(checkEntity, checkEntityBounds, collidableEntity, entityBounds)) {
-                                        endTime = collisionTime;
-                                    } else {
-                                        startTime = collisionTime;
+                                        if (overlaps(checkEntity, checkEntityBounds, collidableEntity, entityBounds)) {
+                                            endTime = collisionTime;
+                                        } else {
+                                            startTime = collisionTime;
+                                        }
                                     }
-                                }
-                                if (!minCollisionEntity || startTime < minCollisionTime) {
-                                    minCollisionEntity = collidableEntity;
-                                    minCollisionTime = startTime;
-                                    minCollisionEntityCollisionHandler = collisionHandler;
-                                    minCheckEntityCollisionHandler = checkEntityCollisionHandler;
-                                }
+                                    if (!minCollisionEntity || startTime < minCollisionTime) {
+                                        minCollisionEntity = collidableEntity;
+                                        minCollisionTime = startTime;
+                                        minCollisionEntityCollisionHandler = collisionHandler;
+                                        minCheckEntityCollisionHandler = checkEntityCollisionHandler;
+                                    }
 
+                                }
                             }
                         }
-                    }
-                    if (minCollisionEntity) {
-                        // back out to the min collision time and adjust position (and velocity, and whatever else our 'physics' engine handles
-                        /*
-                        if (minCheckEntityCollisionHandler) {
-                            if (minCheckEntityCollisionHandler.collisionResolution.type == COLLISION_RESOLUTION_TYPE_SOLID) {
-                                levelPlayEntityMatrixRemove(state.matrix, state.tileSize, checkEntity);
-
-                                checkEntity.x = checkEntity.updateStartX + (checkEntity.velocityX * minCollisionTime) / state.tileSize;
-                                checkEntity.y = checkEntity.updateStartY + (checkEntity.velocityY * minCollisionTime) / state.tileSize;
-                                checkEntity.velocityX = 0;
-                                checkEntity.velocityY = 0;
-
-                                levelPlayEntityMatrixAdd(state.matrix, state.tileSize, checkEntity);
-                                setEntityDirty(checkEntity);
-
-                            } else if (minCheckEntityCollisionHandler.collisionResolution.type == COLLISION_RESOLUTION_TYPE_EAT) {
-                                minCollisionEntity.dead = true;
+                        if (minCollisionEntity) {
+                            // back out to the min collision time and adjust position (and velocity, and whatever else our 'physics' engine handles
+                            /*
+                            if (minCheckEntityCollisionHandler) {
+                                if (minCheckEntityCollisionHandler.collisionResolution.type == COLLISION_RESOLUTION_TYPE_SOLID) {
+                                    levelPlayEntityMatrixRemove(state.matrix, state.tileSize, checkEntity);
+    
+                                    checkEntity.x = checkEntity.updateStartX + (checkEntity.velocityX * minCollisionTime) / state.tileSize;
+                                    checkEntity.y = checkEntity.updateStartY + (checkEntity.velocityY * minCollisionTime) / state.tileSize;
+                                    checkEntity.velocityX = 0;
+                                    checkEntity.velocityY = 0;
+    
+                                    levelPlayEntityMatrixAdd(state.matrix, state.tileSize, checkEntity);
+                                    setEntityDirty(checkEntity);
+    
+                                } else if (minCheckEntityCollisionHandler.collisionResolution.type == COLLISION_RESOLUTION_TYPE_EAT) {
+                                    minCollisionEntity.dead = true;
+                                }
+                                if (checkEntity.updateDurationOffset < minCollisionTime) {
+                                    checkEntity.updateDurationOffset = minCollisionTime;
+                                    newCheckEntities.push(checkEntity);
+                                }
                             }
-                            if (checkEntity.updateDurationOffset < minCollisionTime) {
-                                checkEntity.updateDurationOffset = minCollisionTime;
-                                newCheckEntities.push(checkEntity);
-                            }
+                            */
+                            handleCollision(minCheckEntityCollisionHandler, minCollisionTime, checkEntity, minCollisionEntity, newCheckEntities);
+                            handleCollision(minCollisionEntityCollisionHandler, minCollisionTime, minCollisionEntity, checkEntity, newCheckEntities);
+                            // TODO exclude from future collisions if the collisions are at zero duration
                         }
-                        */
-                        handleCollision(minCheckEntityCollisionHandler, minCollisionTime, checkEntity, minCollisionEntity, newCheckEntities);
-                        handleCollision(minCollisionEntityCollisionHandler, minCollisionTime, minCollisionEntity, checkEntity, newCheckEntities);
-                        // TODO exclude from future collisions if the collisions are at zero duration
                     }
-                }
-                checkEntities = newCheckEntities;
-            } while (checkEntities.length);
+                    checkEntities = newCheckEntities;
+                } while (checkEntities.length);
+
+            }
             return result;
         }
 
@@ -469,13 +481,20 @@
 
         var lastUpdate = performance.now();
         var animationCallback: FrameRequestCallback = function (now: number) {
-
+            // register next one first so it can be cancelled
+            runner.animationFrameRequestId = requestAnimationFrame(animationCallback);
             var diff = Math.max(1, Math.min(100, now - lastUpdate));
             lastUpdate = now;
-            let done = update(state, diff);
-            if (!done) {
-                render(state, dirtyTiles);
-                runner.animationFrameRequestId = requestAnimationFrame(animationCallback);
+            state.ageMillis += diff;
+
+            //let dy = Math.max(0, state.previousCanvas.height - state.ageMillis);
+            //let transitioning = dy > 0;
+            let transitioning = false;
+            if (!update(state, diff, transitioning)) {
+                if (transitioning) {
+                    //context.drawImage(state.previousCanvas, 0, state.previousCanvas.height - dy);
+                }
+                render(state, dirtyTiles, state.renderOffsetX, state.renderOffsetY, transitioning);
             }
         };
 

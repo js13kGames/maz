@@ -55,6 +55,7 @@
     <TypeScriptCompile Include="src\main\ts\Maz\Tween\IEasingFunction.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Tween\IEasingRecord.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Tween\IRecordContextEffectFunction.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Tween\IRecordContextEffectRenderFunction.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Tween\IRecordEasingFunction.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Tween\ITween.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Tween\Easing.ts" />
@@ -99,12 +100,13 @@
     <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\ILevelPlayMatrixPopulator.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\ILevelPlayStateRunner.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\levelPlayInitFactory.ts" />
-    <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\levelPlayStop.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\levelPlayStopFactory.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\rectangleIntersection.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\rectangleOverlaps.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\StateRunner.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\toFont.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Tween\Easing\EasingLinear.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Tween\recordContextEffectRenderCanvasFactory.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Universe\Classification.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\ILevelPlayEntity.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Universe\Collision\ICollisionHandler.ts" />

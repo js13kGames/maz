@@ -1,4 +1,10 @@
-﻿let contextEffectScaleFunction: IContextEffectFunction = function (effect: IEffectScale, t: number, source: HTMLCanvasElement, destinationCanvas: HTMLCanvasElement, destinationContext: CanvasRenderingContext2D) {
+﻿let contextEffectScaleFunction: IContextEffectFunction = function (
+    effect: IEffectScale,
+    t: number,
+    renderer: IRecordContextEffectRenderFunction,
+    destinationCanvas: HTMLCanvasElement,
+    destinationContext: CanvasRenderingContext2D
+) {
 
     let cx = effect.cx * destinationCanvas.width;
     let cy = effect.cy * destinationCanvas.height;
@@ -8,7 +14,7 @@
 
     destinationContext.translate(cx, cy);
     destinationContext.scale(scaleX, scaleY);
-    destinationContext.drawImage(source, -cx, -cy);
+    renderer(destinationContext, -cx, -cy);
 
 
 } 

@@ -1,3 +1,3 @@
 ﻿interface IStateCompleteCallback {
-    (nextState: IRecord<StateKey>): boolean;
+    (nextState: IRecord<StateKey>): void;
 }

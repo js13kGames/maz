@@ -3,7 +3,7 @@
     let orientationTransformationFrom = ORIENTATION_TRANSFORMATIONS[orientationFrom];
     let orientationTransformationTo = ORIENTATION_TRANSFORMATIONS[orientationTo];
     let tweens: ITween[] = [];
-    if (orientationTransformationFrom.flipY != orientationTransformationTo.flipY && Math.abs(orientationTransformationFrom.rotate - orientationTransformationTo.rotate) == 2) {
+    if (orientationTransformationFrom.flipY != orientationTransformationTo.flipY) {
         tweens.push({
             durationMillis: duration, 
             easing: {
@@ -22,7 +22,8 @@
                 }
             }
         });
-    } else if (orientationTransformationFrom.rotate != orientationTransformationTo.rotate && orientationTransformationFrom.flipY == orientationTransformationTo.flipY) {
+    }
+    if (orientationTransformationFrom.rotate != orientationTransformationTo.rotate) {
         let dAngle: number;
         let next = (orientationTransformationFrom.rotate + 1) % 4 == orientationTransformationTo.rotate;
         if (next && orientationTransformationFrom.flipY || !next && !orientationTransformationFrom.flipY) {

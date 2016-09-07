@@ -1,3 +1,3 @@
 ﻿interface IStateStopFunction {
-    (record: StateRunner): void;
+    (record: StateRunner, nextStateKey: IRecord<StateKey>): void;
 }
