@@ -10,12 +10,11 @@
             return [];
         });
         proxied(stateKey, innerMatrix, validEntityTypes, difficulty, rng);
-        for (let x = 0; x < innerMatrix.width; x++) {
-            for (let y = 0; y < innerMatrix.height; y++) {
-                // assumes we are the first thing to write to matrix, overwrite
-                matrix.tiles[x + 1][y + 1] = innerMatrix.tiles[x][y];
-            }
-        }
+        levelPlayMatrixIterateAll(innerMatrix, function (value: ILevelPlayEntityDescription[], x: number, y: number) {
+            matrix.tiles[x + 1][y + 1] = value;
+            // TODO can remove this return if we can trick the TS compiler
+            return value;
+        });
         // add in the walls
         let stickyPoints: IPoint[] = [];
         let removablePoints: IPoint[][] = [];

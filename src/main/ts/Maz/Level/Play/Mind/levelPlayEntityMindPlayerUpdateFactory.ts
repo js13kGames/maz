@@ -37,8 +37,6 @@ function levelPlayEntityMindPlayerUpdateFactory(
         if (directionInput) {
             mind.desiredDirection = directionInput;
         }
-        let vx = entity.velocityX;
-        let vy = entity.velocityY;
         let originalOrientation = entity.orientation;
         let direction: Direction;
         let centerMargin = tileCenterFraction * state.tileSize;
@@ -47,60 +45,43 @@ function levelPlayEntityMindPlayerUpdateFactory(
             let dx = ((entity.x + entity.width / 2) % state.tileSize) - state.tileSize / 2;
             if (Math.abs(dx) > centerMargin) {
                 if (dx > 0) {
-                    vx = -entity.description.type.speed;
                     direction = DIRECTION_WEST;
                 } else {
-                    vx = entity.description.type.speed;
                     direction = DIRECTION_EAST;
                 }
-                vy = 0;
             } else {
                 if (mind.desiredDirection == upKeyCode) {
-                    vy = -entity.description.type.speed;
                     direction = DIRECTION_NORTH;
                 } else /*if (mind.desiredDirection == downKeyCode)*/ {
-                    vy = entity.description.type.speed;
                     direction = DIRECTION_SOUTH;
                 }
-                vx = 0;
             }
         } else if (mind.desiredDirection == leftKeyCode || mind.desiredDirection == rightKeyCode) {
             let dy = ((entity.y + entity.height / 2) % state.tileSize) - state.tileSize / 2;
             if (Math.abs(dy) > centerMargin) {
                 if (dy > 0) {
-                    vy = -entity.description.type.speed;
                     direction = DIRECTION_NORTH;
                 } else {
-                    vy = entity.description.type.speed;
                     direction = DIRECTION_SOUTH;
                 }
-                vx = 0;
             } else {
                 if (mind.desiredDirection == leftKeyCode) {
-                    vx = -entity.description.type.speed;
                     direction = DIRECTION_WEST;
                 } else /*if (mind.desiredDirection == rightKeyCode)*/ {
-                    vx = entity.description.type.speed;
                     direction = DIRECTION_EAST;
                 }
-                vy = 0;
             }
         }
-        entity.velocityX = vx;
-        entity.velocityY = vy;
         let result: ILevelPlayEntityMindUpdateResult = {
             newAnimations: {}
         };
-        if (direction) {
-            let newOrientation = ORIENTATION_TRANSFORMATIONS[originalOrientation].next[direction];
-            if (newOrientation != entity.orientation) {
-                result.newAnimations['y'] = animationTurn(200, entity.orientation, newOrientation, entity.width, entity.height);
-                entity.orientation = newOrientation;
-            }
+        if (entity.velocityX || entity.velocityY || directionInput) {
+            result.newEntityState = ENTITY_STATE_MOVING;
+        } else {
+            result.newEntityState = ENTITY_STATE_IDLE;
         }
-        if (!entity.animations['x']) {
-            result.newAnimations['x'] = animationMotionWalk(500, entity.width, entity.height);
-            //result.newAnimations['x'] = animationMotionHop(300, entity.baseWidth, entity.baseHeight)
+        if (direction) {
+            result.newDirection = direction;
         }
         let newStateDirection: Direction;
         if (entity.x < -entity.width) {
@@ -114,6 +95,7 @@ function levelPlayEntityMindPlayerUpdateFactory(
         }
         if (newStateDirection) {
             let dir = POINT_DIRECTIONS_CARDINAL[newStateDirection - 1];
+            state.key.players[0].initialOrientation = entity.orientation;
             result.newState = {
                 type: STATE_LEVEL_PLAY,
                 value: {

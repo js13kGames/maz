@@ -1,4 +1,4 @@
 ﻿interface ICollisionHandler {
-    filter: (entityType: IEntityType) => boolean;
+    filters: IRecord<EntityTypeFilter>[];
     collisionResolution: IRecord<CollisionResolution>;
 }

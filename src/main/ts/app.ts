@@ -7,6 +7,8 @@ window.onload = function () {
     let minTiles = 250;
     let tileMargin = 0.05;
 
+    let collisionHandlerSearch = collisionHandlerSearchFactory(entityTypeFilterInit());
+
     let matrixPopulators: { [_: number]: ILevelPlayMatrixPopulator[] } = {};
 
     let wallEntityType: IEntityType = {
@@ -16,8 +18,13 @@ window.onload = function () {
         classification: CLASSIFICATION_WALL,
         foregroundColor: '#998',
         speed: 0,
+        observationTimeoutMillis: 10000,
+        minDecisionTimeoutMillis: 500,
+        varianceDecisionTimeoutMillis: 100,
         children: [],
-        collisionHandlers: []
+        collisionHandlers: [],
+        animations: {}
+
     };
 
     matrixPopulators[CLASSIFICATION_WALL] = [
@@ -67,7 +74,10 @@ window.onload = function () {
         INPUT_ATOMIC_ID_LEFT,
         INPUT_ATOMIC_ID_RIGHT
     );
-    levelPlayMindUpdateHandlers[MIND_MONSTER] = levelPlayEntityMindMonsterUpdateFactory();
+    levelPlayMindUpdateHandlers[MIND_MONSTER] = levelPlayEntityMindMonsterUpdateFactory(
+        tileMargin,
+        collisionHandlerSearch
+    );
     // do nothing
     levelPlayMindUpdateHandlers[MIND_INERT] = <any>function () { };
 
@@ -75,11 +85,11 @@ window.onload = function () {
 
     var contentElement = document.body;
 
-    var introElement = document.getElementById('intro');
-    var introPlayButton = document.getElementById('intro_play_button');
-    var introRestartButton = document.getElementById('intro_restart_button');
+    var introElement = document.getElementById('i');
+    var introPlayButton = document.getElementById('ip');
+    var introRestartButton = document.getElementById('r');
 
-    var levelPlayElement = <HTMLCanvasElement>document.getElementById('level_play');
+    var levelPlayElement = <HTMLCanvasElement>document.getElementById('p');
     var levelPlayContext = levelPlayElement.getContext('2d');
 
     var initHandlers: { [_: number]: IRecordHandlerFunction<StateKey, IRecord<State>> } = {};
@@ -105,7 +115,9 @@ window.onload = function () {
         playerInputs,
         5,
         easingInit(), 
-        effectInit()
+        effectInit(),
+        animationInit(),
+        collisionHandlerSearch
     );
     var startHandler = recordHandlerDelegateFactory(startHandlers);
 
@@ -123,7 +135,20 @@ window.onload = function () {
         currentStateRunner = startHandler(currentState, callback);
         return true;
     };
-    var currentStateKey = null;
-    var currentState = introInit(currentStateKey);
-    var currentStateRunner = introStart(currentState, callback);
+    var currentStateKey: IRecord<StateKey> = {
+        type: STATE_INTRO
+    };
+    var currentState = initHandler(currentStateKey);
+    var currentStateRunner = startHandler(currentState, callback);
+
+    window.onresize = function () {
+        stopHandler(currentStateRunner, currentStateKey);
+        if (currentStateKey.type == STATE_LEVEL_PLAY) {
+            // disable scrolling in
+            let stateKeyLevelPlay = <ILevelPlayStateKey>currentStateKey.value;
+            stateKeyLevelPlay.playerEntryPoint = null;
+        }
+        currentState = initHandler(currentStateKey);
+        currentStateRunner = startHandler(currentState, callback);
+    };
 };

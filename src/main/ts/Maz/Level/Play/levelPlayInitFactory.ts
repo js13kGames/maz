@@ -268,8 +268,13 @@
                         renderContext: renderContext,
                         velocityX: 0,
                         velocityY: 0,
-                        animations: {}
+                        animations: {},
+                        state: ENTITY_STATE_IDLE
                     };
+                    if (description.initialOrientation) {
+                        levelPlayEntityRotateRenderMask(entity, ORIENTATION_FACING_RIGHT_FEET_DOWN, description.initialOrientation);
+                        entity.orientation = description.initialOrientation;
+                    }
                     entities.push(entity);
                     levelPlayEntityMatrixAdd(entityMatrix, tileSize, entity);
                 }
@@ -281,6 +286,23 @@
         previousCanvas.height = containerHeight;
         let previousContext = previousCanvas.getContext('2d');
         previousContext.drawImage(canvasElement, 0, 0);
+        
+        let tween: ITween;
+        if (stateKey.playerEntryPoint) {
+            tween = {
+                durationMillis: 500,
+                easing: {
+                    type: EASING_QUADRATIC_OUT
+                },
+                effect: {
+                    type: EFFECT_SLIDE_IN,
+                    value: {
+                        slideOutRenderer: recordContextEffectRenderCanvasFactory(previousCanvas),
+                        direction: stateKey.playerEntryPoint
+                    }
+                }
+            };
+        }
 
         return {
             type: STATE_LEVEL_PLAY,
@@ -291,11 +313,13 @@
                 outlineWidth: outlineWidth,
                 entities: entities,
                 matrix: entityMatrix,
+                entityTypeDecisionCaches: {},
                 width: width, 
                 height: height,
                 tileSize: tileSize,
                 rng: entityRng,
-                ageMillis: 0
+                ageMillis: 0,
+                tween: tween
             }
         }
     }

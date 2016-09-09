@@ -5,6 +5,7 @@
     outlineWidth: number;
     entities: ILevelPlayEntity[],
     matrix: ILevelPlayMatrix<ILevelPlayEntity[]>,
+    entityTypeDecisionCaches: {[_: string]: ILevelPlayEntityMindDecisionCache},
     width: number,
     height: number,
     tileSize: number,

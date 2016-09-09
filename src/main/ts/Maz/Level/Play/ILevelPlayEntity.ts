@@ -11,7 +11,8 @@
     font: string;
     rotation: number;
 
-    animations: { [_:string]:ILevelPlayEntityAnimation };
+    state: EntityState;
+    animations: { [_:number]:ILevelPlayEntityAnimation };
 
     dead?: boolean;
 

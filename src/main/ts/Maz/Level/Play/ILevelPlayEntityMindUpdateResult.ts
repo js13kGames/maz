@@ -1,10 +1,11 @@
 ﻿interface ILevelPlayEntityMindUpdateResult {
     newEntities?: ILevelPlayEntity[];
     // new animations for this entity
-    newAnimations?: { [_: string]: ILevelPlayEntityAnimation };
+    newAnimations?: { [_: number]: ILevelPlayEntityAnimation };
     // removed animations for this entity
     deletedAnimationIds?: string[];
 
-    newOrientation?: Orientation;
+    newDirection?: Direction;
     newState?: IRecord<StateKey>;
+    newEntityState?: EntityState;
 }

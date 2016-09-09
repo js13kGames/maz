@@ -4,5 +4,5 @@
     y: number,
     z: number,
     players: ILevelPlayEntityDescription[], 
-    playerEntryPoint: Direction
+    playerEntryPoint?: Direction
 }
