@@ -27,6 +27,12 @@
                     classifications: [CLASSIFICATION_COLLECTABLE_COMMON, CLASSIFICATION_COLLECTABLE_RARE]
                 }
             }];
+            let monsterFilters: IRecord<EntityTypeFilter>[] = [{
+                type: ENTITY_TYPE_FILTER_CLASSIFICATION, 
+                value: {
+                    classifications: [CLASSIFICATION_MONSTER]
+                }
+            }];
 
             // walls
             let wallCollisionHandlers: ICollisionHandler[] = [
@@ -40,9 +46,9 @@
                 bold: true,
                 classification: CLASSIFICATION_WALL,
                 speed: 0,
-                observationTimeoutMillis: 10000,
-                minDecisionTimeoutMillis: 500,
-                varianceDecisionTimeoutMillis: 100,
+                observationTimeoutMillis: 5000,
+                minDecisionTimeoutMillis: 5000,
+                varianceDecisionTimeoutMillis: 3000,
                 collisionHandlers: wallCollisionHandlers,
                 animations: {}
             }, {
@@ -103,7 +109,7 @@
                     outline: true,
                     children: [],
                     classification: CLASSIFICATION_MONSTER,
-                    speed: (2 + rng()) * 0.001,
+                    speed: (0.5 + rng()) * 0.002,
                     observationTimeoutMillis: 999 + rng(999),
                     minDecisionTimeoutMillis: 500 + rng(999),
                     varianceDecisionTimeoutMillis: 99 + rng(99),
@@ -141,6 +147,12 @@
                     filters: collectableFilters,
                     collisionResolution: {
                         type: COLLISION_RESOLUTION_TYPE_EAT
+                    }
+                },
+                {
+                    filters: monsterFilters,
+                    collisionResolution: {
+                        type: COLLISION_RESOLUTION_TYPE_DIE
                     }
                 }
             ];
@@ -185,13 +197,15 @@
             for (let key in entityTypes) {
                 let entityTypeList = entityTypes[key];
                 for (let entityType of entityTypeList) {
-                    entityType.bravery = rng();
+                    entityType.cowardliness = rng();
                     entityType.aggression = rng();
                     entityType.dedication = 0.5 + rng()/2;
                     entityType.hunger = rng();
                     entityType.distractibility = rng();
-                    entityType.turnCost = rng(3) + 1;
-                    entityType.tileCost = rng(3) + 1;
+                    entityType.turnCost = rng(25);
+                    entityType.tileCost = 1;
+                    entityType.flipCost = rng(25);
+                    entityType.visionRange = rng(5) + 5;
                 }
             }
 

@@ -76,7 +76,10 @@ window.onload = function () {
     );
     levelPlayMindUpdateHandlers[MIND_MONSTER] = levelPlayEntityMindMonsterUpdateFactory(
         tileMargin,
-        collisionHandlerSearch
+        collisionHandlerSearch,
+        costRecordCollisionResolutionValueFunctionFactory(),
+        desirabilityCollisionResolutionValueFunctionFactory(),
+        inverseDesirabilityCollisionResolutionValueFunctionFactory()
     );
     // do nothing
     levelPlayMindUpdateHandlers[MIND_INERT] = <any>function () { };

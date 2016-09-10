@@ -139,6 +139,20 @@
                                 sh
                             );
                         }
+                        /*
+                        if (entity.description.mind.value ) {
+                            let points: IPoint[] = entity.description.mind.value['lastDecisionPath'];
+                            if (points) {
+                                context.fillStyle = entity.description.type.foregroundColor;
+                                for (let i in points) {
+                                    let point = points[i];
+                                    context.globalAlpha = parseInt(i) / points.length;
+                                    context.fillText(entity.description.type.character, point.x * state.tileSize, point.y * state.tileSize);
+                                }
+                                context.globalAlpha = 1;
+                            }
+                        }
+                        */
                     }
 
                     dirtyTilesX[ty] = false;

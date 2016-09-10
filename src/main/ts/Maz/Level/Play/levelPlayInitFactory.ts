@@ -129,12 +129,14 @@
         var width = Math.ceil(containerWidth / tileSize);
         if (width < minimumDimension) {
             width = minimumDimension;
-            tileSize = Math.ceil(minimumAreaTiles / width);
+            tileSize = Math.ceil(containerWidth / width);
+            height = containerHeight / tileSize;
         }
         var height = Math.ceil(containerHeight / tileSize);
         if (height < minimumDimension) {
             height = minimumDimension;
-            tileSize = Math.ceil(minimumAreaTiles / height);
+            tileSize = Math.ceil(containerHeight / height);
+            width = Math.ceil(containerWidth / tileSize);
         }
 
         let matrix = levelPlayMatrixCreate<ILevelPlayEntityDescription[]>(width, height, function () {

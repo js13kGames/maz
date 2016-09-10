@@ -1,4 +1,4 @@
-﻿function levelPlayMatrixIterate<T>(matrix: ILevelPlayMatrix<T>, tileSize: number, bounds: IRectangle, f: (a?:T) => T) {
+﻿function levelPlayMatrixIterate<T>(matrix: ILevelPlayMatrix<T>, tileSize: number, bounds: IRectangle, f: (a?:T, x?:number, y?:number) => T) {
     let minTilex = Math.max(0, Math.floor(bounds.x / tileSize));
     let maxTilex = Math.min(matrix.width-1, Math.floor((bounds.x + bounds.width - 1) / tileSize));
     let minTiley = Math.max(0, Math.floor(bounds.y / tileSize));
@@ -7,7 +7,7 @@
         let tilesx = matrix.tiles[tilex];
         for (let tiley = minTiley; tiley <= maxTiley; tiley++) {
             let tilesxy = tilesx[tiley];
-            tilesx[tiley] = f(tilesxy);
+            tilesx[tiley] = f(tilesxy, tilex, tiley);
         }
     }
 }
