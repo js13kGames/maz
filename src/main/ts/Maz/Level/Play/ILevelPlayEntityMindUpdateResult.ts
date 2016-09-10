@@ -8,4 +8,5 @@
     newDirection?: Direction;
     newState?: IRecord<StateKey>;
     newEntityState?: EntityState;
+    dead?: boolean;
 }

@@ -5,7 +5,8 @@
     canvasElement: HTMLCanvasElement,
     context: CanvasRenderingContext2D,
     minimumAreaTiles: number,
-    minimumDimension: number
+    minimumDimension: number,
+    classificationRanges: { [_: number]: IRange }
 ): IStateInitFunction {
 
     function fit(char: string, tileSize: number, tight: boolean, bold: boolean, outlineWidth: number, padding: number, context: CanvasRenderingContext2D) {
@@ -115,8 +116,25 @@
         var levelSeed = stateKey.universe.seed + stateKey.x + stateKey.y * 100000;
         var levelRng = randomNumberGeneratorFactory(levelSeed);
 
-        // TODO do not allow every monster in every level
-        var validEntityTypes: { [_: number]: IEntityType[] } = stateKey.universe.entityTypes;
+        // do not allow every monster in every level
+        var validEntityTypes: { [_: number]: IEntityType[] } = {};
+        for (let classification in classificationRanges) {
+            let range = classificationRanges[classification];
+            let entityTypes = stateKey.universe.entityTypes[classification];
+            if (entityTypes) {
+                let count = range.min + levelRng(range.max - range.min + 1);
+                let copy = entityTypes.concat.apply([], entityTypes);
+                let classificationEntityTypes: IEntityType[] = [];
+                while (count > 0 && copy.length) {
+                    count--;
+                    // TODO look up children too
+                    let index = levelRng(copy.length);
+                    let entityType = copy.splice(index, 1)[0];
+                    classificationEntityTypes.push(entityType);
+                }
+                validEntityTypes[classification] = classificationEntityTypes;
+            }
+        }
 
         var entitySeed = stateKey.universe.seed + stateKey.z + stateKey.y * 100 + stateKey.x * 10000;
         var entityRng = randomNumberGeneratorFactory(entitySeed);
@@ -201,6 +219,10 @@
                 let entities = matrix.tiles[pos.x][pos.y];
                 if (!entities.length) {
                     let playerDescription = stateKey.players[playerIndex];
+                    let playerMind = <ILevelPlayEntityMindPlayer>playerDescription.mind.value;
+                    // don't walk straight out
+                    playerMind.desiredDirection = null;
+
                     entities.push(playerDescription);
                     playerIndex++;
                     if (stateKey.players.length <= playerIndex) {
@@ -290,7 +312,7 @@
         previousContext.drawImage(canvasElement, 0, 0);
         
         let tween: ITween;
-        if (stateKey.playerEntryPoint) {
+        if (stateKey.playerEntryPoint && !stateKey.suppressScroll) {
             tween = {
                 durationMillis: 500,
                 easing: {

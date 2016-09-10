@@ -95,6 +95,28 @@ window.onload = function () {
     var levelPlayElement = <HTMLCanvasElement>document.getElementById('p');
     var levelPlayContext = levelPlayElement.getContext('2d');
 
+    let classificationRanges: { [_: number]: IRange } = {};
+    classificationRanges[CLASSIFICATION_MONSTER] = {
+        min: 1,
+        max: 3
+    };
+    classificationRanges[CLASSIFICATION_COLLECTABLE_COMMON] = {
+        min: 1, 
+        max: 1
+    };
+    classificationRanges[CLASSIFICATION_COLLECTABLE_RARE] = {
+        min: 0,
+        max: 2
+    };
+    classificationRanges[CLASSIFICATION_OBSTACLE] = {
+        min: 0,
+        max: 1
+    };
+    classificationRanges[CLASSIFICATION_WALL] = {
+        min: 1,
+        max: 3
+    };
+
     var initHandlers: { [_: number]: IRecordHandlerFunction<StateKey, IRecord<State>> } = {};
     initHandlers[STATE_INTRO] = introInit;
     initHandlers[STATE_LEVEL_PLAY] = levelPlayInitFactory(
@@ -104,7 +126,8 @@ window.onload = function () {
         levelPlayElement,
         levelPlayContext,
         minTiles,
-        7
+        7,
+        classificationRanges
     );
     var initHandler = recordHandlerDelegateFactory(initHandlers);
 
@@ -149,7 +172,7 @@ window.onload = function () {
         if (currentStateKey.type == STATE_LEVEL_PLAY) {
             // disable scrolling in
             let stateKeyLevelPlay = <ILevelPlayStateKey>currentStateKey.value;
-            stateKeyLevelPlay.playerEntryPoint = null;
+            stateKeyLevelPlay.suppressScroll = true;
         }
         currentState = initHandler(currentStateKey);
         currentStateRunner = startHandler(currentState, callback);

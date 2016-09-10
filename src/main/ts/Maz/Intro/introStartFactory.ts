@@ -40,7 +40,6 @@
 
             entityTypes[CLASSIFICATION_WALL] = [{
                 backgroundColor: '#9AA',
-                foregroundColor: '#DEE',
                 children: [],
                 character: '#',
                 bold: true,
@@ -52,19 +51,18 @@
                 collisionHandlers: wallCollisionHandlers,
                 animations: {}
             }, {
-                    backgroundColor: '#A9A',
-                    foregroundColor: '#EDE',
-                    children: [],
-                    character: '%',
-                    bold: true,
-                    classification: CLASSIFICATION_WALL,
-                    speed: 0,
-                    observationTimeoutMillis: 10000,
-                    minDecisionTimeoutMillis: 500,
-                    varianceDecisionTimeoutMillis: 100,
-                    collisionHandlers: wallCollisionHandlers,
-                    animations: {}
-                }];
+                backgroundColor: '#A9A',
+                children: [],
+                character: '%',
+                bold: true,
+                classification: CLASSIFICATION_WALL,
+                speed: 0,
+                observationTimeoutMillis: 10000,
+                minDecisionTimeoutMillis: 500,
+                varianceDecisionTimeoutMillis: 100,
+                collisionHandlers: wallCollisionHandlers,
+                animations: {}
+            }];
 
             // monsters
             let monsterCollisionHandlers: ICollisionHandler[] = [
@@ -104,9 +102,9 @@
                 monsterCharacters = monsterCharacters.replace(monsterCharacter, '');
 
                 monsterEntityTypes.push({
-                    foregroundColor: COLOR_RED,
                     character: monsterCharacter,
                     outline: true,
+                    bold: true,
                     children: [],
                     classification: CLASSIFICATION_MONSTER,
                     speed: (0.5 + rng()) * 0.002,
@@ -123,7 +121,6 @@
             let collectableCommonCollisionHandlers: ICollisionHandler[] = [
             ];
             entityTypes[CLASSIFICATION_COLLECTABLE_COMMON] = [{
-                foregroundColor: '#FF6',
                 character: '.',
                 children: [],
                 classification: CLASSIFICATION_COLLECTABLE_COMMON,
@@ -201,12 +198,14 @@
                     entityType.aggression = rng();
                     entityType.dedication = 0.5 + rng()/2;
                     entityType.hunger = rng();
-                    entityType.distractibility = rng();
-                    entityType.turnCost = rng(25);
+                    entityType.distractibility = rng() * rng();
+                    entityType.turnCost = rng() * rng() * 25;
                     entityType.tileCost = 1;
                     entityType.flipCost = rng(25);
                     entityType.visionRange = rng(5) + 5;
+                    entityType.foregroundColor = randomColor(rng, entityType.backgroundColor != null);
                 }
+                
             }
 
             var universe: IUniverse = {

@@ -42,6 +42,8 @@
     <TypeScriptCompile Include="src\main\ts\Maz\Animation\IAnimationWalk.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Animation\IAnimationTweenFactory.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Animation\IRecordAnimationTweenFactory.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\randomColor.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\IRange.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\ILevelPlayEntityAnimation.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\ILevelPlayEntityMindDecisionCache.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\ILevelPLayEntityMindDecisionTile.ts" />

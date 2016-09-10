@@ -260,6 +260,9 @@
                             entity.velocityX = vx;
                             entity.velocityY = vy;
                         }
+                        if (updateResult.dead) {
+                            entity.dead = true;
+                        }
                     }
                     // deal with dead entities
                     if (entity.dead) {
