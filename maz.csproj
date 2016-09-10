@@ -124,12 +124,16 @@
     <TypeScriptCompile Include="src\main\ts\Maz\Universe\Classification.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\ILevelPlayEntity.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Universe\Collision\collisionHandlerSearchFactory.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Universe\Collision\costRecordCollisionResolutionValueFunctionFactory.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Universe\Collision\desirabilityCollisionResolutionValueFunctionFactory.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Universe\Collision\ICollisionHandler.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Universe\Collision\CollisionResolution.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Universe\Collision\CollisionResolutionType.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Universe\Collision\ICollisionHandlerSearch.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Universe\Collision\ICollisionResolutionValueFunction.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Universe\Collision\inverseDesirabilityCollisionResolutionValueFunctionFactory.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Universe\Collision\IRecordCollisionResolutionValueFunction.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\Universe\Collision\Resolution\collisionResolutionValueAgressionFunctionFactory.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Universe\Collision\Resolution\collisionResolutionValueConstantFunctionFactory.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Universe\EntityState.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Universe\Filter\EntityTypeFilter.ts" />
