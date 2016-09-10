@@ -52,10 +52,10 @@ window.onload = function () {
     }
 
     matrixPopulators[CLASSIFICATION_MONSTER] = [
-        levelPlayMatrixPopulatorFloodFillFactory(6, 1, 1, 0, 40, monsterFilterFactory(2))
+        levelPlayMatrixPopulatorFloodFillFactory(2, 6, 1, 1, 0, 40, monsterFilterFactory(2))
     ];
     matrixPopulators[CLASSIFICATION_COLLECTABLE_COMMON] = [
-        levelPlayMatrixPopulatorFloodFillFactory(1, 0, minTiles, 0, 20, monsterFilterFactory(1))
+        levelPlayMatrixPopulatorFloodFillFactory(1, 1, 0, minTiles, 0, 20, monsterFilterFactory(1))
     ]
 
     var playerInputs: { [_: number]: IInputAtomic } = {};
@@ -143,7 +143,8 @@ window.onload = function () {
         easingInit(), 
         effectInit(),
         animationInit(),
-        collisionHandlerSearch
+        collisionHandlerSearch,
+        4000
     );
     var startHandler = recordHandlerDelegateFactory(startHandlers);
 

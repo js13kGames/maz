@@ -7,10 +7,32 @@
     recordEasingFunction: IRecordEasingFunction,
     recordContextEffectFunction: IRecordContextEffectFunction,
     recordAnimationTweenFactory: IRecordAnimationTweenFactory,
-    collisionHandlerSearch: ICollisionHandlerSearch
+    collisionHandlerSearch: ICollisionHandlerSearch, 
+    displayTimeMillis: number
 ): IStateStartFunction {
 
     function render(context: CanvasRenderingContext2D, state: ILevelPlayState, dirtyTiles: ILevelPlayMatrix<boolean>, dx: number, dy: number, redraw?: boolean): void {
+        let textX: number;
+        let textY: number;
+        let textStrokeWidth: number;
+        let remainingDisplayTimeMillis = displayTimeMillis - state.ageMillis; 
+        if (remainingDisplayTimeMillis > 0) {
+            let levelName = state.levelName;
+            context.font = state.levelFont;
+            let textHeight = state.tileSize * 2;
+            let textWidth = context.measureText(levelName).width;
+            let textStrokeWidth = state.tileSize / 3;
+            textX = (canvas.width - textWidth) / 2;
+            textY = (canvas.height - textHeight) / 2;
+            let r: IRectangle = {
+                x: textX - dx - textStrokeWidth / 2,
+                y: textY - dy - textStrokeWidth / 2,
+                width: textWidth + textStrokeWidth,
+                height: textHeight + textStrokeWidth
+            };
+            levelPlayMatrixIterate(dirtyTiles, state.tileSize, r, dirtyTileSetter);
+        }
+
         context.save();        
         context.translate(dx, dy);
         for (let tx = dirtyTiles.width; tx > 0;) {
@@ -25,7 +47,7 @@
                     let entitiesXY = entitiesX[ty];
                     let y = ty * state.tileSize;
 
-                    context.fillStyle = COLOR_BLACK;
+                    context.fillStyle = state.levelColors[0];
                     context.fillRect(x, y, state.tileSize, state.tileSize);
 
                     for (let entity of entitiesXY) {
@@ -160,6 +182,22 @@
             }
         }
         context.restore();
+        if (remainingDisplayTimeMillis > 0) {
+            context.save();
+            context.textBaseline = 'top';
+            let t = remainingDisplayTimeMillis / displayTimeMillis;
+            let p = recordEasingFunction({
+                bounce: true,
+                type: EASING_QUADRATIC_OUT
+            }, t);
+            context.globalAlpha = p;
+            context.fillStyle = state.levelColors[2];
+            context.fillText(state.levelName, textX, textY);
+            context.lineWidth = textStrokeWidth;
+            context.strokeStyle = '#FFF';
+            context.strokeText(state.levelName, textX, textY);
+            context.restore();
+        }
     }
 
     function dirtyTileSetter() {
@@ -183,14 +221,16 @@
             levelPlayMatrixIterate(dirtyTiles, state.tileSize, entity, dirtyTileSetter);
         }
 
-
         function update(state: ILevelPlayState, duration: number, paused: boolean): boolean {
             let result: boolean;
             let checkEntities: ILevelPlayEntity[] = [];
             for (let i = state.entities.length; i > 0;) {
                 i--;
                 let entity = state.entities[i];
-                if (!paused) {
+                entity.updateStartX = entity.x;
+                entity.updateStartY = entity.y;
+                entity.excluded = [];
+                if (!paused && (entity.description.mind.type == MIND_PLAYER_1 || state.ageMillis > displayTimeMillis)) {
                     entity.updateStartOrientation = entity.orientation;
                     let updateResult = entityUpdate(entity.description.mind, state, entity);
                     // deal with new entities
@@ -265,33 +305,26 @@
                         }
                     }
                     // deal with dead entities
-                    if (entity.dead) {
-                        state.entities.splice(i, 1);
-                        setEntityDirty(entity);
+                    levelPlayEntityRotateRenderMask(entity, entity.updateStartOrientation, entity.orientation);
+
+                    if (entity.velocityX || entity.velocityY) {
                         levelPlayEntityMatrixRemove(state.matrix, state.tileSize, entity);
-                    } else {
-                        entity.updateStartX = entity.x;
-                        entity.updateStartY = entity.y;
-                        entity.updateDurationOffset = 0;
+                        setEntityDirty(entity);
 
-                        levelPlayEntityRotateRenderMask(entity, entity.updateStartOrientation, entity.orientation);
+                        entity.x += entity.velocityX * duration * state.tileSize;
+                        entity.y += entity.velocityY * duration * state.tileSize;
+                        checkEntities.push(entity);
 
-                        if (entity.velocityX || entity.velocityY) {
-                            levelPlayEntityMatrixRemove(state.matrix, state.tileSize, entity);
-                            setEntityDirty(entity);
+                        levelPlayEntityMatrixAdd(state.matrix, state.tileSize, entity);
+                        setEntityDirty(entity);
 
-                            entity.x += entity.velocityX * duration * state.tileSize;
-                            entity.y += entity.velocityY * duration * state.tileSize;
-                            checkEntities.push(entity);
-
-                            levelPlayEntityMatrixAdd(state.matrix, state.tileSize, entity);
-                            setEntityDirty(entity);
-
-                        }
                     }
                 }
-
-                if (!entity.animations[ENTITY_ANIMATION_BASE] && entity.state) {
+                if (entity.dead) {
+                    state.entities.splice(i, 1);
+                    setEntityDirty(entity);
+                    levelPlayEntityMatrixRemove(state.matrix, state.tileSize, entity);
+                } else if (!entity.animations[ENTITY_ANIMATION_BASE] && entity.state) {
                     let animation = entity.description.type.animations[entity.state];
                     if (animation) {
                         entity.animations[ENTITY_ANIMATION_BASE] = {
@@ -329,7 +362,13 @@
                         for (let collidableEntity of collidableEntities) {
 
                             // do they overlap?
-                            if (checkEntity != collidableEntity && !checkEntity.dead && !collidableEntity.dead && overlaps(checkEntity, checkEntity, collidableEntity, collidableEntity)) {
+                            if (
+                                checkEntity != collidableEntity &&
+                                !checkEntity.dead &&
+                                !collidableEntity.dead &&
+                                !arrayContains(collidableEntity.excluded, checkEntity) &&
+                                overlaps(checkEntity, checkEntity, collidableEntity, collidableEntity)
+                            ) {
 
                                 // do they interact in any way?
                                 let checkEntityCollisionResolution = collisionHandlerSearch(checkEntity.description.type, collidableEntity.description.type);
@@ -337,7 +376,7 @@
 
                                 if (checkEntityCollisionResolution || collisionResolution) {
                                     // work out when they collided by stepping back 
-                                    let startTime = Math.max(checkEntity.updateDurationOffset, collidableEntity.updateDurationOffset);
+                                    let startTime = 0;
                                     let endTime = duration;
                                     let entityBounds: any = {
                                         width: collidableEntity.width,
@@ -410,36 +449,34 @@
 
         function handleCollision(collisionResolution: IRecord<CollisionResolution>, collisionTime: number, entity: ILevelPlayEntity, withEntity: ILevelPlayEntity, checkEntities: ILevelPlayEntity[]) {
             // TODO move to collision handler delegate
+            entity.excluded.push(withEntity);
+            if (!arrayContains(checkEntities, entity)) {
+                checkEntities.push(entity);
+            }
+
             if (collisionResolution) {
-            if (collisionResolution.type == COLLISION_RESOLUTION_TYPE_SOLID) {
-                levelPlayEntityMatrixRemove(state.matrix, state.tileSize, entity);
+                if (collisionResolution.type == COLLISION_RESOLUTION_TYPE_SOLID) {
+                    levelPlayEntityMatrixRemove(state.matrix, state.tileSize, entity);
 
-                entity.x = entity.updateStartX + (entity.velocityX * collisionTime) / state.tileSize;
-                entity.y = entity.updateStartY + (entity.velocityY * collisionTime) / state.tileSize;
-                if (entity.velocityX != 0 || entity.velocityY != 0) {
-                    entity.velocityX = 0;
-                    entity.velocityY = 0;
-                } else {
-                    // reset the rotation too!
-                    levelPlayEntityRotateRenderMask(entity, entity.orientation, entity.updateStartOrientation);
-                    entity.orientation = entity.updateStartOrientation;
-                    delete entity.animations[ENTITY_ANIMATION_TURN];
+                    entity.x = entity.updateStartX + (entity.velocityX * collisionTime) / state.tileSize;
+                    entity.y = entity.updateStartY + (entity.velocityY * collisionTime) / state.tileSize;
+                    if (entity.velocityX != 0 || entity.velocityY != 0) {
+                        entity.velocityX = 0;
+                        entity.velocityY = 0;
+                    } else {
+                        // reset the rotation too!
+                        levelPlayEntityRotateRenderMask(entity, entity.orientation, entity.updateStartOrientation);
+                        entity.orientation = entity.updateStartOrientation;
+                        delete entity.animations[ENTITY_ANIMATION_TURN];
+                    }
+
+                    levelPlayEntityMatrixAdd(state.matrix, state.tileSize, entity);
+                    setEntityDirty(entity);
+
+                } else if (collisionResolution.type == COLLISION_RESOLUTION_TYPE_EAT) {
+                    withEntity.dead = true;
                 }
 
-                levelPlayEntityMatrixAdd(state.matrix, state.tileSize, entity);
-                setEntityDirty(entity);
-
-            } else if (collisionResolution.type == COLLISION_RESOLUTION_TYPE_EAT) {
-                withEntity.dead = true;
-            }
-
-            if (entity.updateDurationOffset < collisionTime) {
-                entity.updateDurationOffset = collisionTime;
-                // this might be getting added multiple times
-                if (!arrayContains(checkEntities, entity)) {
-                    checkEntities.push(entity);
-                }
-            }
             }
         }
 

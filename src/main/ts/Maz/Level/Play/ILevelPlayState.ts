@@ -11,5 +11,8 @@
     tileSize: number,
     rng: IRandomNumberGenerator,
     ageMillis: number,
-    tween?: ITween
+    tween?: ITween,
+    levelName: string,
+    levelFont: string,
+    levelColors: string[]
 }

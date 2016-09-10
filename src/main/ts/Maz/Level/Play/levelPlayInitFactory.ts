@@ -343,7 +343,10 @@
                 tileSize: tileSize,
                 rng: entityRng,
                 ageMillis: 0,
-                tween: tween
+                tween: tween,
+                levelName: toStringWithSign(stateKey.x) + toStringWithSign(stateKey.y) + toStringWithSign(stateKey.z),
+                levelFont: toFont(tileSize * 2, true, 'monospace'),
+                levelColors: randomColor(levelRng)
             }
         }
     }

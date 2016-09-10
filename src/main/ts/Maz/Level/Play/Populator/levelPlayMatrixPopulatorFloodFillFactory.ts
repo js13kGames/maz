@@ -1,5 +1,6 @@
 ﻿function levelPlayMatrixPopulatorFloodFillFactory(
-    fills: number,
+    minFills: number,
+    maxFills: number,
     fillDifficultyMultiplier: number,
     fillQuantity: number,
     fillQuantityDifficultyMultiplier: number,
@@ -7,6 +8,7 @@
     filter: (entities: ILevelPlayEntityDescription[], matrix?: ILevelPlayMatrix<ILevelPlayEntityDescription[]>, x?: number, y?: number) => boolean
 ): ILevelPlayMatrixPopulator {
     return function (stateKey: ILevelPlayStateKey, matrix: ILevelPlayMatrix<ILevelPlayEntityDescription[]>, validEntityTypes: IEntityType[], difficulty: number, rng: IRandomNumberGenerator): void {
+        let fills = minFills + rng(maxFills - minFills + 1);
         let fillsRemaining = Math.ceil(fills + fillDifficultyMultiplier * difficulty);
         let attemptsRemaining = maxAttempts + fillsRemaining;
 

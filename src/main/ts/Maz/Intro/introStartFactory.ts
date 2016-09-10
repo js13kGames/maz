@@ -203,7 +203,7 @@
                     entityType.tileCost = 1;
                     entityType.flipCost = rng(25);
                     entityType.visionRange = rng(5) + 5;
-                    entityType.foregroundColor = randomColor(rng, entityType.backgroundColor != null);
+                    entityType.foregroundColor = randomColor(rng)[entityType.backgroundColor?2:3];
                 }
                 
             }

@@ -20,7 +20,9 @@
     velocityX: number;
     velocityY: number;
     updateStartOrientation?: Orientation;
+
+    // collisions
     updateStartX?: number;
     updateStartY?: number;
-    updateDurationOffset?: number;
+    excluded?: ILevelPlayEntity[];
 }

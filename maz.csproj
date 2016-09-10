@@ -123,6 +123,7 @@
     <TypeScriptCompile Include="src\main\ts\Maz\toFont.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Animation\Tween\Easing\EasingLinear.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Animation\Tween\recordContextEffectRenderCanvasFactory.ts" />
+    <TypeScriptCompile Include="src\main\ts\Maz\toStringWithSign.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Universe\Classification.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Level\Play\ILevelPlayEntity.ts" />
     <TypeScriptCompile Include="src\main\ts\Maz\Universe\Collision\collisionHandlerSearchFactory.ts" />

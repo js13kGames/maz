@@ -12,59 +12,89 @@
         rng: IRandomNumberGenerator,
         entityTypeDecisionMatrix: ILevelPlayMatrix<ILevelPlayEntityMindDecisionTile>,
         monsterDecisionMatrix: ILevelPlayMatrix<ILevelPlayEntityMindMonsterDecisionTile>,
-        tx: number,
-        ty: number,
-        direction: Direction,
-        cost: number, 
-        cumulativeDanger: number,
-        first?: boolean
+        startTx: number,
+        startTy: number,
+        startDirection: Direction,
+        startCost: number, 
+        startDanger: number
     ): number {
-        let entityTypeTile = entityTypeDecisionMatrix.tiles[tx][ty];
-        let monsterTile = monsterDecisionMatrix.tiles[tx][ty];
-        if (monsterTile.cumulativeCost == null || monsterTile.cumulativeCost > cost) {
+        let todos: {
+            tx: number, 
+            ty: number,
+            direction: Direction, 
+            cumulativeCost: number,
+            cumulativeDanger: number
+        }[] = [{
+            tx: startTx, 
+            ty: startTy,
+            direction: startDirection, 
+            cumulativeCost: startCost,
+            cumulativeDanger: startDanger
+            }];
+        let bestPointValue: number;
+        while (todos.length) {
+            let todo = todos.splice(0, 1)[0];
+            let tx = todo.tx;
+            let ty = todo.ty;
             let entityTypeTile = entityTypeDecisionMatrix.tiles[tx][ty];
-            monsterTile.cumulativeCost = cost;
-            let rawDesirability = entityTypeTile.desirability + rng() * entityType.distractibility;
-            let desirability = rawDesirability * Math.pow(entityType.dedication, cost);
-            monsterTile.desirability = desirability;
-            let rawDanger = entityTypeTile.danger;
-            let danger = cumulativeDanger + rawDanger * Math.pow(entityType.cowardliness, cost);
-            monsterTile.danger = danger;
-            monsterTile.entryDirection = direction;
-            let bestPointValue = first?-999:desirability - danger;
-            for (let nextDirectionIndex in POINT_DIRECTIONS_CARDINAL) {
-                let nextDirection = parseInt(nextDirectionIndex) + 1;
-                let offset = POINT_DIRECTIONS_CARDINAL[nextDirectionIndex];
-                let nextTx = tx + offset.x;
-                let nextTy = ty + offset.y;
-                if (nextTx >= bounds.x && nextTx < bounds.x + bounds.width && nextTy >= bounds.y && nextTy < bounds.y + bounds.height) {
-                    let nextCost = cost + entityType.tileCost + entityTypeTile.costToTraverse;
-                    if ((nextDirection + direction - 2) % 2) {
-                        // turning left or right
-                        nextCost += entityType.turnCost;
-                    } else if (nextDirection != direction) {
-                        // going back the way we came
-                        nextCost += entityType.flipCost;
-                    } 
-                    let checkPointValue = populateDecisionMatrix(
-                        entityType,
-                        bounds,
-                        rng,
-                        entityTypeDecisionMatrix,
-                        monsterDecisionMatrix,
-                        nextTx,
-                        nextTy,
-                        nextDirection,
-                        nextCost,
-                        danger
-                    );
-                    if (checkPointValue != null && checkPointValue > bestPointValue) {
-                        bestPointValue = checkPointValue;
+            let cost = todo.cumulativeCost + entityTypeTile.costToTraverse + entityType.tileCost;
+            let monsterTile = monsterDecisionMatrix.tiles[tx][ty];
+            if (monsterTile.cumulativeCost == null || monsterTile.cumulativeCost > cost) {
+                let entityTypeTile = entityTypeDecisionMatrix.tiles[tx][ty];
+                monsterTile.cumulativeCost = cost;
+                let rawDesirability = entityTypeTile.desirability + rng() * entityType.distractibility;
+                let desirability = rawDesirability * Math.pow(entityType.dedication, cost);
+                monsterTile.desirability = desirability;
+                let rawDanger = entityTypeTile.danger;
+                let cumulativeDanger = todo.cumulativeDanger;
+                let danger = cumulativeDanger + rawDanger * Math.pow(entityType.cowardliness, cost);
+                monsterTile.danger = danger;
+                let direction = todo.direction;
+                monsterTile.entryDirection = direction;
+                let testBestPointValue = desirability - danger;
+                if ((tx != startTx || ty != startTy) && (bestPointValue == null || testBestPointValue > bestPointValue)) {
+                    bestPointValue = testBestPointValue;
+                }
+                for (let nextDirectionIndex in POINT_DIRECTIONS_CARDINAL) {
+                    let nextDirection = parseInt(nextDirectionIndex) + 1;
+                    let offset = POINT_DIRECTIONS_CARDINAL[nextDirectionIndex];
+                    let nextTx = tx + offset.x;
+                    let nextTy = ty + offset.y;
+                    if (nextTx >= bounds.x && nextTx < bounds.x + bounds.width && nextTy >= bounds.y && nextTy < bounds.y + bounds.height) {
+                        let nextCost = cost;
+                        if ((nextDirection + direction - 2) % 2) {
+                            // turning left or right
+                            nextCost += entityType.turnCost;
+                        } else if (nextDirection != direction) {
+                            // going back the way we came
+                            nextCost += entityType.flipCost;
+                        }
+                        todos.push({
+                            tx: nextTx, 
+                            ty: nextTy, 
+                            cumulativeCost: nextCost,
+                            cumulativeDanger: danger,
+                            direction: nextDirection
+                        });
+                        /*
+                        let checkPointValue = populateDecisionMatrix(
+                            entityType,
+                            bounds,
+                            rng,
+                            entityTypeDecisionMatrix,
+                            monsterDecisionMatrix,
+                            nextTx,
+                            nextTy,
+                            nextDirection,
+                            nextCost,
+                            danger
+                        );
+                        */
                     }
                 }
-            }
-            return bestPointValue;
-        } 
+            } 
+        }
+        return bestPointValue;
 
     }
 
@@ -198,8 +228,7 @@
                     // turn the orientation into a direction using bitwise operation
                     entity.orientation & 0x7,
                     1,
-                    0,
-                    true
+                    0
                 );
                 let bestTiles: IPoint[] = [];
                 levelPlayMatrixIterate(mind.decisionMatrix, 1, bounds, function (t: ILevelPlayEntityMindMonsterDecisionTile, x: number, y: number) {
