@@ -8,6 +8,14 @@
         let entityTypeBits = 3;
         let entityTypeCount = 1 << entityTypeBits;
 
+        let globalAnimations: { [_: number]: IRecord<Animation> } = {};
+        globalAnimations[ENTITY_STATE_DYING] = {
+            type: ANIMATION_TYPE_DIE_STANDARD, 
+            value: {
+                durationMillis: 600
+            }
+        };
+
         // bind any event handlers
         playButton.onclick = function () {
             let universeSeed = Math.ceil(Math.random() * 1000000);
@@ -38,31 +46,27 @@
             let wallCollisionHandlers: ICollisionHandler[] = [
             ];
 
-            entityTypes[CLASSIFICATION_WALL] = [{
-                backgroundColor: '#9AA',
-                children: [],
-                character: '#',
-                bold: true,
-                classification: CLASSIFICATION_WALL,
-                speed: 0,
-                observationTimeoutMillis: 5000,
-                minDecisionTimeoutMillis: 5000,
-                varianceDecisionTimeoutMillis: 3000,
-                collisionHandlers: wallCollisionHandlers,
-                animations: {}
-            }, {
-                backgroundColor: '#A9A',
-                children: [],
-                character: '%',
-                bold: true,
-                classification: CLASSIFICATION_WALL,
-                speed: 0,
-                observationTimeoutMillis: 10000,
-                minDecisionTimeoutMillis: 500,
-                varianceDecisionTimeoutMillis: 100,
-                collisionHandlers: wallCollisionHandlers,
-                animations: {}
-            }];
+            let wallCharacters = '%#≡⁞';
+            let wallEntityTypes: IEntityType[] = [];
+            for (let i = 0; i < entityTypeCount; i++) {
+                let wallCharacter = wallCharacters.charAt(rng(wallCharacters.length));
+                let wallColors = randomColor(rng, 4);
+                wallEntityTypes.push({
+                    backgroundColor: wallColors[2],
+                    foregroundColor: [wallColors[3]],
+                    children: [],
+                    character: wallCharacter,
+                    bold: true,
+                    classification: CLASSIFICATION_WALL,
+                    speed: 0,
+                    observationTimeoutMillis: 5000,
+                    minDecisionTimeoutMillis: 5000,
+                    varianceDecisionTimeoutMillis: 3000,
+                    collisionHandlers: wallCollisionHandlers,
+                    animations: globalAnimations
+                });
+            }
+            entityTypes[CLASSIFICATION_WALL] = wallEntityTypes;
 
             // monsters
             let monsterCollisionHandlers: ICollisionHandler[] = [
@@ -73,7 +77,7 @@
                     }
                 }
             ];
-            let monsterAnimations: { [_: number]: IRecord<Animation> } = {};
+            let monsterAnimations: { [_: number]: IRecord<Animation> } = mapCopy(globalAnimations);
             monsterAnimations[ENTITY_STATE_IDLE] = {
                 type: ANIMATION_TYPE_HOP,
                 value: {
@@ -92,6 +96,7 @@
                     squishYScale: -0.45
                 }
             };
+            
 
             let monsterCharacters = 'abcefghijklmnoprstuvwxyz';
             let monsterEntityTypes: IEntityType[] = [];
@@ -132,7 +137,7 @@
                     minDecisionTimeoutMillis: 500,
                     varianceDecisionTimeoutMillis: 100,
                     collisionHandlers: collectableCommonCollisionHandlers,
-                    animations: {}
+                    animations: globalAnimations
                 });
             }
             entityTypes[CLASSIFICATION_COLLECTABLE_COMMON] = collectableEntityTypes;
@@ -159,7 +164,7 @@
                 }
             ];
 
-            var playerAnimations: { [_: number]: IRecord<Animation> } = {};
+            var playerAnimations: { [_: number]: IRecord<Animation> } = mapCopy(globalAnimations);
             playerAnimations[ENTITY_STATE_IDLE] = {
                 type: ANIMATION_TYPE_THROB,
                 value: {
@@ -199,17 +204,9 @@
             for (let key in entityTypes) {
                 let entityTypeList = entityTypes[key];
                 for (let entityType of entityTypeList) {
-                    let colors = randomColor(rng);
-                    if (entityType.backgroundColor) {
-                        while (colors.length > 1) {
-                            let index: number;
-                            if (colors.length % 2) {
-                                index = 0;
-                            } else {
-                                index = colors.length - 1;
-                            }
-                            colors.splice(index, 1);
-                        }
+                    let colors = randomColor(rng, 4);
+                    if (!entityType.foregroundColor) {
+                        entityType.foregroundColor = colors;
                     } 
                     entityType.cowardliness = rng();
                     entityType.aggression = rng();
@@ -220,7 +217,6 @@
                     entityType.tileCost = 1;
                     entityType.flipCost = rng(25);
                     entityType.visionRange = rng(5) + 5;
-                    entityType.foregroundColor = colors;
                 }
                 
             }

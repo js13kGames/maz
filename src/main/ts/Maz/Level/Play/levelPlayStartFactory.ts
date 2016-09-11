@@ -8,7 +8,8 @@
     recordContextEffectFunction: IRecordContextEffectFunction,
     recordAnimationTweenFactory: IRecordAnimationTweenFactory,
     collisionHandlerSearch: ICollisionHandlerSearch, 
-    displayTimeMillis: number
+    displayTimeMillis: number, 
+    gravity: number
 ): IStateStartFunction {
 
     function render(context: CanvasRenderingContext2D, state: ILevelPlayState, dirtyTiles: ILevelPlayMatrix<boolean>, dx: number, dy: number, redraw?: boolean): void {
@@ -230,7 +231,7 @@
                 entity.updateStartX = entity.x;
                 entity.updateStartY = entity.y;
                 entity.excluded = [];
-                if (!paused && (entity.description.mind.type == MIND_PLAYER_1 || state.ageMillis > displayTimeMillis)) {
+                if (!paused && (entity.description.type.classification == CLASSIFICATION_PARTICLE || entity.description.mind.type == MIND_PLAYER_1 || state.ageMillis > displayTimeMillis)) {
                     entity.updateStartOrientation = entity.orientation;
                     let updateResult = entityUpdate(entity.description.mind, state, entity);
                     // deal with new entities
@@ -249,8 +250,11 @@
                         }
                         if (updateResult.newEntities) {
                             for (let newEntity of updateResult.newEntities) {
+                                newEntity.excluded = [];
                                 state.entities.push(newEntity);
                                 // NOTE do we need to check the new entity?
+                                setEntityDirty(newEntity);
+                                levelPlayEntityMatrixAdd(state.matrix, state.tileSize, newEntity);
                             }
                         }
                         if (updateResult.newState) {
@@ -306,6 +310,10 @@
                     }
                     // deal with dead entities
                     levelPlayEntityRotateRenderMask(entity, entity.updateStartOrientation, entity.orientation);
+
+                    if (entity.gravity) {
+                        entity.velocityY += gravity * duration;
+                    }
 
                     if (entity.velocityX || entity.velocityY) {
                         levelPlayEntityMatrixRemove(state.matrix, state.tileSize, entity);
@@ -450,11 +458,11 @@
         function handleCollision(collisionResolution: IRecord<CollisionResolution>, collisionTime: number, entity: ILevelPlayEntity, withEntity: ILevelPlayEntity, checkEntities: ILevelPlayEntity[]) {
             // TODO move to collision handler delegate
             entity.excluded.push(withEntity);
-            if (!arrayContains(checkEntities, entity)) {
-                checkEntities.push(entity);
-            }
 
             if (collisionResolution) {
+                if (!arrayContains(checkEntities, entity)) {
+                    checkEntities.push(entity);
+                }
                 if (collisionResolution.type == COLLISION_RESOLUTION_TYPE_SOLID) {
                     levelPlayEntityMatrixRemove(state.matrix, state.tileSize, entity);
 
@@ -485,7 +493,9 @@
             let result: boolean;
             if (intersection) {
                 // check the masks overlap
-                intersectionContext.clearRect(0, 0, intersection.width, intersection.height);
+                let w = Math.ceil(intersection.width);
+                let h = Math.ceil(intersection.height);
+                intersectionContext.clearRect(0, 0, w, h);
                 intersectionContext.drawImage(entity1.renderMask, bounds1.x - intersection.x, bounds1.y - intersection.y);
                 intersectionContext.save();
                 intersectionContext.globalCompositeOperation = 'destination-in';
@@ -493,8 +503,8 @@
                 intersectionContext.restore();
 
                 // look for any non-transparent pixels
-                let intersectionData = intersectionContext.getImageData(0, 0, intersection.width, intersection.height);
-                let max = intersectionData.width * intersectionData.height * 4;
+                let intersectionData = intersectionContext.getImageData(0, 0, w, h);
+                let max = w * h * 4;
                 result = false;
                 for (let i = 3; i < max; i += 4) {
                     let alpha = intersectionData.data[i];

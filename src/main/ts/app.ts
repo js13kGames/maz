@@ -24,7 +24,19 @@ window.onload = function () {
         children: [],
         collisionHandlers: [],
         animations: {}
+    };
 
+    let particleEntityType: IEntityType = {
+        character: '?',
+        classification: CLASSIFICATION_PARTICLE,
+        foregroundColor: [], 
+        speed: 0.02,
+        observationTimeoutMillis: 10000,
+        minDecisionTimeoutMillis: 300,
+        varianceDecisionTimeoutMillis: 100,
+        children: [],
+        collisionHandlers: [], 
+        animations: {} 
     };
 
     matrixPopulators[CLASSIFICATION_WALL] = [
@@ -81,6 +93,7 @@ window.onload = function () {
         desirabilityCollisionResolutionValueFunctionFactory(),
         inverseDesirabilityCollisionResolutionValueFunctionFactory()
     );
+    levelPlayMindUpdateHandlers[MIND_PARTICLE] = levelPlayEntityMindParticleUpdateFactory();
     // do nothing
     levelPlayMindUpdateHandlers[MIND_INERT] = <any>function () { };
 
@@ -117,6 +130,8 @@ window.onload = function () {
         max: 3
     };
 
+    let animationFactory = animationInit();
+
     var initHandlers: { [_: number]: IRecordHandlerFunction<StateKey, IRecord<State>> } = {};
     initHandlers[STATE_INTRO] = introInit;
     initHandlers[STATE_LEVEL_PLAY] = levelPlayInitFactory(
@@ -127,7 +142,9 @@ window.onload = function () {
         levelPlayContext,
         minTiles,
         7,
-        classificationRanges
+        classificationRanges,
+        particleEntityType,
+        animationFactory
     );
     var initHandler = recordHandlerDelegateFactory(initHandlers);
 
@@ -142,9 +159,10 @@ window.onload = function () {
         5,
         easingInit(), 
         effectInit(),
-        animationInit(),
+        animationFactory,
         collisionHandlerSearch,
-        4000
+        4000, 
+        0.00008
     );
     var startHandler = recordHandlerDelegateFactory(startHandlers);
 

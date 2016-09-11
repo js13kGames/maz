@@ -21,6 +21,7 @@
     velocityX: number;
     velocityY: number;
     updateStartOrientation?: Orientation;
+    gravity?: boolean;
 
     // collisions
     updateStartX?: number;

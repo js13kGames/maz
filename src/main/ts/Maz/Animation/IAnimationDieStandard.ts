@@ -1,0 +1,4 @@
+﻿interface IAnimationDieStandard {
+    durationMillis: number;
+
+}

@@ -1,15 +1,29 @@
-﻿let _ranges = ['0000', '0123', '4567', '89AB', 'CDEF'];
+﻿let _ranges = '0123456789ABCDEF';
 let _combinations = [0x1, 0x2, 0x3, 0x4, 0x5, 0x6]
 
-function randomColor(rng: IRandomNumberGenerator): string[] {
+function randomColor(rng: IRandomNumberGenerator, versions: number): string[] {
     let combinationIndex = rng(_combinations.length);
     let combination = _combinations[combinationIndex];
-    let brightIndex = rng(_ranges[0].length);
-    let dimIndex = rng(_ranges[0].length);
+    let highCount = 0;
+    let tempCombination = combination;
+    while (tempCombination) {
+        if (tempCombination & 0x1) {
+            highCount++;
+        }
+        tempCombination = tempCombination >> 1;
+    }
+
+    let sectionSize = Math.floor(_ranges.length / versions);
+
+    let brightDelta = rng(sectionSize + highCount * 2 - 3);
+    let dimDelta = rng(sectionSize) - sectionSize - highCount + 2;
     let result: string[] = [];
-    for (let i = 0; i < _ranges.length - 1; i++) {
-        let bright = _ranges[i + 1].charAt(brightIndex);
-        let dim = _ranges[0].charAt(dimIndex);
+    for (let i = 0; i < versions; i++) {
+        let index = Math.floor((i * _ranges.length) / versions);
+        let brightIndex = Math.max(0, Math.min(index + brightDelta, _ranges.length-1));
+        let dimIndex = Math.max(0, Math.min(index + dimDelta, _ranges.length-1));
+        let bright = _ranges.charAt(brightIndex);
+        let dim = _ranges.charAt(dimIndex);
         let color = '#';
         let count = 3;
         let tempCombination = combination;

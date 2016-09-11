@@ -6,7 +6,9 @@
     context: CanvasRenderingContext2D,
     minimumAreaTiles: number,
     minimumDimension: number,
-    classificationRanges: { [_: number]: IRange }
+    classificationRanges: { [_: number]: IRange }, 
+    particleType: IEntityType,
+    recordAnimationTweenFactory: IRecordAnimationTweenFactory
 ): IStateInitFunction {
 
     function fit(char: string, tileSize: number, tight: boolean, bold: boolean, outlineWidth: number, padding: number, context: CanvasRenderingContext2D) {
@@ -284,14 +286,7 @@
                         let gy = textHeight * 0.2;
                         let r = Math.max(textWidth, textHeight) * 0.8;
                         let gradient = renderContext.createRadialGradient(gx, gy, r / 5, gx, gy, r);  
-                        let mid: number;
-                        if (entityType.outline) {
-                            mid = 0.2;
-                        } else {
-                            mid = 0.5;
-                        }
-                        gradient.addColorStop(0, COLOR_WHITE);
-                        gradient.addColorStop(mid, entityType.foregroundColor[entityType.foregroundColor.length - 1]);
+                        gradient.addColorStop(0, entityType.foregroundColor[entityType.foregroundColor.length - 1]);
                         gradient.addColorStop(1, entityType.foregroundColor[1]);
                         foregroundColor = gradient;
                     } else {
@@ -351,10 +346,98 @@
             };
         }
 
-        let levelColors = randomColor(levelRng);
-        let levelBackground = previousContext.createLinearGradient(0, 0, 0, containerHeight * 1.7);
-        levelBackground.addColorStop(0, levelColors[0]);
-        levelBackground.addColorStop(1, levelColors[1]);
+        let rowSeed = stateKey.universe.seed + stateKey.y;
+        let previousRowRng = randomNumberGeneratorFactory(rowSeed - 1);
+        let rowRng = randomNumberGeneratorFactory(rowSeed);
+
+        let previousRowColors = randomColor(previousRowRng, 3);
+        let levelColors = randomColor(rowRng, 3);
+        let levelBackground = previousContext.createLinearGradient(0, 0, 0, containerHeight);
+        levelBackground.addColorStop(0, previousRowColors[0]);
+        levelBackground.addColorStop(1, levelColors[0]);
+
+        let particleSize = tileSize / 8;
+
+        let particleFactory: ILevelPlayParticleEntityFactory = function (
+            cx: number, 
+            cy: number, 
+            colors: string[], 
+            quantity: number
+        ): ILevelPlayEntity[] {
+            let results: ILevelPlayEntity[] = [];
+
+            while (quantity) {
+                quantity--;
+
+                let angle = Math.random() * Math.PI;
+                let velocity = particleType.speed / 2 + particleType.speed * Math.random();
+                let velocityX = Math.cos(angle) * velocity;
+                let velocityY = -Math.sin(angle) * velocity;
+
+                let color = colors[levelRng(colors.length)];
+
+                let canvas = document.createElement('canvas');
+                canvas.width = particleSize;
+                canvas.height = particleSize;
+                let context = canvas.getContext('2d');
+                context.fillStyle = color;
+                context.fillRect(0, 0, particleSize, particleSize);
+
+                let render = document.createElement('canvas');
+                render.width = particleSize;
+                render.height = particleSize;
+                let renderContext = render.getContext('2d');
+
+                let particleMind: IRecord<LevelPlayEntityMind> = {
+                    type: MIND_PARTICLE, 
+                    value: {
+                    }
+                };
+
+                let animation: IRecord<Animation> = {
+                    type: ANIMATION_TYPE_FADE, 
+                    value: {
+                        durationMillis: 999, 
+                        startAlpha: 1, 
+                        dAlpha: -1
+                    }
+                };
+                let animations: { [_: number]: ILevelPlayEntityAnimation } = {
+                };
+                animations[ENTITY_ANIMATION_TEMP] = {
+                    tweens: recordAnimationTweenFactory(animation, particleSize, particleSize), 
+                    age: 0
+                };
+
+                let particle: ILevelPlayEntity = {
+                    x: cx - particleSize / 2,
+                    y: cy - particleSize / 2,
+                    width: particleSize,
+                    height: particleSize,
+                    velocityX: velocityX, 
+                    velocityY: velocityY, 
+                    render: render, 
+                    renderContext: renderContext,
+                    renderMask: canvas,
+                    foregroundFill: color,
+                    offsetX: particleSize / 2,
+                    offsetY: particleSize / 2, 
+                    description: {
+                        type: particleType, 
+                        mind: particleMind
+                    },
+                    orientation: ORIENTATION_FACING_RIGHT_FEET_DOWN, 
+                    font: null,
+                    rotation: 0,
+                    state: ENTITY_STATE_DYING, 
+                    animations: animations, 
+                    gravity: true                    
+                };
+                results.push(particle);
+            }
+
+            return results;
+        }
 
         return {
             type: STATE_LEVEL_PLAY,
@@ -375,7 +458,8 @@
                 levelName: toStringWithSign(stateKey.x) + toStringWithSign(stateKey.y) + toStringWithSign(stateKey.z),
                 levelFont: toFont(tileSize * 2, true, 'monospace'),
                 levelColors: levelColors,
-                levelBackground: levelBackground
+                levelBackground: levelBackground,
+                particleFactory: particleFactory
             }
         }
     }

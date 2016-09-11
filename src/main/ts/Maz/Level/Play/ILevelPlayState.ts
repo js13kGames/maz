@@ -15,5 +15,6 @@
     levelName: string,
     levelFont: string,
     levelColors: string[],
-    levelBackground: CanvasGradient
+    levelBackground: CanvasGradient,
+    particleFactory: ILevelPlayParticleEntityFactory
 }

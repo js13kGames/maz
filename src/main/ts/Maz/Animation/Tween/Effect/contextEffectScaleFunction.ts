@@ -16,5 +16,4 @@
     destinationContext.scale(scaleX, scaleY);
     renderer(destinationContext, -cx, -cy);
 
-
 } 

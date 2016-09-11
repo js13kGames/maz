@@ -80,6 +80,9 @@ function levelPlayEntityMindPlayerUpdateFactory(
         } else {
             result.newEntityState = ENTITY_STATE_IDLE;
         }
+        if (directionInput) {
+            result.newEntities = state.particleFactory(entity.x + entity.width / 2, entity.y + entity.height / 2, entity.description.type.foregroundColor, 4);
+        }
         if (direction) {
             result.newDirection = direction;
         }
@@ -107,8 +110,7 @@ function levelPlayEntityMindPlayerUpdateFactory(
                     players: state.key.players
                 }
             };
-
-        }
+        } 
         return result;
     }
 }
