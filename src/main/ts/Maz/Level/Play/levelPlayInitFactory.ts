@@ -276,6 +276,28 @@
                     renderContext.font = fitResult.font;
                     renderContext.textBaseline = 'top';
 
+                    let foregroundColor: string | CanvasGradient;
+                    if (entityType.foregroundColor.length > 1) {
+
+                        //let gradient = renderContext.createLinearGradient(textWidth, 0, 0, textHeight);
+                        let gx = textWidth * 0.8;
+                        let gy = textHeight * 0.2;
+                        let r = Math.max(textWidth, textHeight) * 0.8;
+                        let gradient = renderContext.createRadialGradient(gx, gy, r / 5, gx, gy, r);  
+                        let mid: number;
+                        if (entityType.outline) {
+                            mid = 0.2;
+                        } else {
+                            mid = 0.5;
+                        }
+                        gradient.addColorStop(0, COLOR_WHITE);
+                        gradient.addColorStop(mid, entityType.foregroundColor[entityType.foregroundColor.length - 1]);
+                        gradient.addColorStop(1, entityType.foregroundColor[1]);
+                        foregroundColor = gradient;
+                    } else {
+                        foregroundColor = entityType.foregroundColor[0];
+                    }
+
                     let entity: ILevelPlayEntity = {
                         description: description,
                         x: tx * tileSize + (tileSize - textWidth) / 2,
@@ -290,6 +312,7 @@
                         renderMask: renderMask,
                         render: render,
                         renderContext: renderContext,
+                        foregroundFill: foregroundColor,
                         velocityX: 0,
                         velocityY: 0,
                         animations: {},
@@ -328,6 +351,11 @@
             };
         }
 
+        let levelColors = randomColor(levelRng);
+        let levelBackground = previousContext.createLinearGradient(0, 0, 0, containerHeight * 1.7);
+        levelBackground.addColorStop(0, levelColors[0]);
+        levelBackground.addColorStop(1, levelColors[1]);
+
         return {
             type: STATE_LEVEL_PLAY,
             value: {
@@ -346,7 +374,8 @@
                 tween: tween,
                 levelName: toStringWithSign(stateKey.x) + toStringWithSign(stateKey.y) + toStringWithSign(stateKey.z),
                 levelFont: toFont(tileSize * 2, true, 'monospace'),
-                levelColors: randomColor(levelRng)
+                levelColors: levelColors,
+                levelBackground: levelBackground
             }
         }
     }

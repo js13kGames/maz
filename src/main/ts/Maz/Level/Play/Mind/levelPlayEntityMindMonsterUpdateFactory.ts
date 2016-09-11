@@ -167,14 +167,14 @@
                             if (entityCollisionResult) {
                                 if (tx == x && ty == y) {
                                     // calculate desirability of us doing this thing
-                                    let collisionResultDesirability = desirabilityCollisionResolutionValueFunction(entityCollisionResult, entityType, tileEntityType);
+                                    let collisionResultDesirability = desirabilityCollisionResolutionValueFunction(entityCollisionResult, state, entityType, tileEntityType);
                                     if (collisionResultDesirability > 0) {
                                         desirability += collisionResultDesirability;
                                     } else {
                                         danger -= collisionResultDesirability;
                                     }
                                 }
-                                costToTraverse += costCollisionResolutionValueFunction(entityCollisionResult, entityType, tileEntityType);
+                                costToTraverse += costCollisionResolutionValueFunction(entityCollisionResult, state, entityType, tileEntityType);
                             }
                             if (tx == x && ty == y) {
                                 // assume that the cost is not relevant for things that happen to us, only desirability
@@ -182,7 +182,7 @@
                                 if (entityTileCollisionResult) {
                                     // calculate the desirability of this thing happening to us 
                                     // reverse handler for desirability...
-                                    let collisionResultDesirability = inverseDesirabilityCollisionResolutionValueFunction(entityTileCollisionResult, entityType, tileEntityType);
+                                    let collisionResultDesirability = inverseDesirabilityCollisionResolutionValueFunction(entityTileCollisionResult, state, entityType, tileEntityType);
                                     if (collisionResultDesirability > 0) {
                                         desirability += collisionResultDesirability;
                                     } else {

@@ -10,6 +10,7 @@
     offsetY: number;
     font: string;
     rotation: number;
+    foregroundFill: string | CanvasGradient;
 
     state: EntityState;
     animations: { [_:number]:ILevelPlayEntityAnimation };

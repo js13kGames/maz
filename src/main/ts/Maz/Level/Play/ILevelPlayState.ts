@@ -14,5 +14,6 @@
     tween?: ITween,
     levelName: string,
     levelFont: string,
-    levelColors: string[]
+    levelColors: string[],
+    levelBackground: CanvasGradient
 }

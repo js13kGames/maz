@@ -16,7 +16,7 @@ window.onload = function () {
         bold: true,
         character: 'x',
         classification: CLASSIFICATION_WALL,
-        foregroundColor: '#998',
+        foregroundColor: ['#998'],
         speed: 0,
         observationTimeoutMillis: 10000,
         minDecisionTimeoutMillis: 500,

@@ -1,3 +1,3 @@
 ﻿interface IRecordCollisionResolutionValueFunction {
-    (collisionResolution: IRecord<CollisionResolution>, entityTypeFrom: IEntityType, entityTypeWith: IEntityType): number;
+    (collisionResolution: IRecord<CollisionResolution>, state: State, entityTypeFrom: IEntityType, entityTypeWith: IEntityType): number;
 }

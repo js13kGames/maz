@@ -3,7 +3,7 @@
     bold?: boolean;
     outline?: boolean;
     backgroundColor?: string;
-    foregroundColor?: string;
+    foregroundColor?: string[];
     parent?: IEntityType;
     children: IEntityType[];
     classification: Classification;

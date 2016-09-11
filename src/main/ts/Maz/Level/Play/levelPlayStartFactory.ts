@@ -21,7 +21,7 @@
             context.font = state.levelFont;
             let textHeight = state.tileSize * 2;
             let textWidth = context.measureText(levelName).width;
-            let textStrokeWidth = state.tileSize / 3;
+            textStrokeWidth = state.outlineWidth;
             textX = (canvas.width - textWidth) / 2;
             textY = (canvas.height - textHeight) / 2;
             let r: IRectangle = {
@@ -47,7 +47,7 @@
                     let entitiesXY = entitiesX[ty];
                     let y = ty * state.tileSize;
 
-                    context.fillStyle = state.levelColors[0];
+                    context.fillStyle = state.levelBackground;
                     context.fillRect(x, y, state.tileSize, state.tileSize);
 
                     for (let entity of entitiesXY) {
@@ -72,12 +72,12 @@
                             if (background) {
                                 renderContext.fillStyle = background;
                             } else {
-                                renderContext.fillStyle = entity.description.type.foregroundColor;
+                                renderContext.fillStyle = entity.foregroundFill;
                             }
                             renderContext.fillRect(0, 0, entity.width, entity.height);
                             renderContext.globalCompositeOperation = 'source-atop';
                             if (background) {
-                                renderContext.fillStyle = entity.description.type.foregroundColor;
+                                renderContext.fillStyle = entity.foregroundFill;
                                 renderContext.fillText(entity.description.type.character, entity.offsetX, entity.offsetY);
                             }
                             if (entity.description.type.outline) {

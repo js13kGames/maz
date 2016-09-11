@@ -120,17 +120,22 @@
             // collectables - common
             let collectableCommonCollisionHandlers: ICollisionHandler[] = [
             ];
-            entityTypes[CLASSIFICATION_COLLECTABLE_COMMON] = [{
-                character: '.',
-                children: [],
-                classification: CLASSIFICATION_COLLECTABLE_COMMON,
-                speed: 0,
-                observationTimeoutMillis: 10000,
-                minDecisionTimeoutMillis: 500,
-                varianceDecisionTimeoutMillis: 100,
-                collisionHandlers: collectableCommonCollisionHandlers,
-                animations: {}
-            }];
+            let collectableEntityTypes: IEntityType[] = [];
+            for (let i = 0; i < entityTypeCount; i++) {
+                // all the same, just different colours
+                collectableEntityTypes.push({
+                    character: '.',
+                    children: [],
+                    classification: CLASSIFICATION_COLLECTABLE_COMMON,
+                    speed: 0,
+                    observationTimeoutMillis: 10000,
+                    minDecisionTimeoutMillis: 500,
+                    varianceDecisionTimeoutMillis: 100,
+                    collisionHandlers: collectableCommonCollisionHandlers,
+                    animations: {}
+                });
+            }
+            entityTypes[CLASSIFICATION_COLLECTABLE_COMMON] = collectableEntityTypes;
 
             // player
             let playerCollisionHandlers: ICollisionHandler[] = [
@@ -174,7 +179,7 @@
                 }
             };
             var playerType: IEntityType = {
-                foregroundColor: COLOR_WHITE,
+                foregroundColor: [COLOR_WHITE],
                 character: '@',
                 //character: '➯',
                 //character: '\ud83d\ude03',
@@ -194,6 +199,18 @@
             for (let key in entityTypes) {
                 let entityTypeList = entityTypes[key];
                 for (let entityType of entityTypeList) {
+                    let colors = randomColor(rng);
+                    if (entityType.backgroundColor) {
+                        while (colors.length > 1) {
+                            let index: number;
+                            if (colors.length % 2) {
+                                index = 0;
+                            } else {
+                                index = colors.length - 1;
+                            }
+                            colors.splice(index, 1);
+                        }
+                    } 
                     entityType.cowardliness = rng();
                     entityType.aggression = rng();
                     entityType.dedication = 0.5 + rng()/2;
@@ -203,7 +220,7 @@
                     entityType.tileCost = 1;
                     entityType.flipCost = rng(25);
                     entityType.visionRange = rng(5) + 5;
-                    entityType.foregroundColor = randomColor(rng)[entityType.backgroundColor?2:3];
+                    entityType.foregroundColor = colors;
                 }
                 
             }
