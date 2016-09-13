@@ -32,7 +32,7 @@
             text = "YOU DIED";
             textTime = min(1, (state.ageMillis - state.gameOverTimeMillis) / displayTimeMillis);
         } else if (state.levelWinTimeMillis) {
-            text = "SUCCESS";
+            text = "CLEAR";
             textTime = min(1, (state.ageMillis - state.levelWinTimeMillis) / displayTimeMillis);
         }
 

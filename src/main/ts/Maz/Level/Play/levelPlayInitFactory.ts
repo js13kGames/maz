@@ -200,7 +200,7 @@
                 let speed: number;
                 if (entityType.classification != CLASSIFICATION_WALL) {
                     if (entityType.sp) {
-                        speed = entityType.sp + rng() * 0.00002;
+                        speed = entityType.sp + rng() * 0.0006;
                     } else {
                         speed = 0.001 + rng() * 0.002;
                     }
