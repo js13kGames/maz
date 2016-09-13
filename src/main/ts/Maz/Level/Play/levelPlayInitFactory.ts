@@ -368,7 +368,7 @@
                     }
                     break;
                 default:
-                case DIRECTION_SOUTH:
+                //case DIRECTION_SOUTH:
                     pos = {
                         x: index,
                         y: height - 1

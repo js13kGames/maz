@@ -125,7 +125,7 @@
 
 
             //let monsterCharacters = 'abcefghijklmnoprstuvwxyz';
-            let monsterCharacters = 'acegiknorstuvwyz';
+            let monsterCharacters = 'acegiknorstuvw';
             let monsterEntityTypes: IEntityType[] = [];
 
             for (let i = 0; i < entityTypeCount; i++) {
@@ -319,7 +319,7 @@
         restartButton.onclick = startGameFactory(newUniverseSeed, 0, 0, true, nextStateCallback);
             
         // show the intro screen
-        intro.removeAttribute('class');
+        removeClass(intro);
 
         return {
             t: STATE_INTRO

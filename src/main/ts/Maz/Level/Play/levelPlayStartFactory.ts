@@ -644,7 +644,7 @@
         }
 
 
-        canvas.removeAttribute('class');
+        removeClass(canvas);
 
         let lastUpdate = performance.now();
         let renderer: IRecordContextEffectRenderFunction = function (renderContext: CanvasRenderingContext2D, x: number, y: number) {

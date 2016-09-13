@@ -2,6 +2,7 @@
 
 let _w = window;
 let _d = document;
+let _c = 'class';
 
 _w.onload = function () {
 
