@@ -271,8 +271,9 @@
         }
 
         let mutationCounts: { [_: number]: number } = {};
+        let mutationRng = randomNumberGeneratorFactory(levelSeed);
         for (let i = 0; i < z; i++) {
-            let index = entityRng(totalCount);
+            let index = mutationRng(totalCount);
             let mutationCount = mutationCounts[index];
             if (mutationCount) {
                 mutationCount++;
@@ -288,7 +289,6 @@
         let entityTypeCount = 0;
         let validEntityTypes: { [_: number]: IEntityType[] } = {};
         for (let classification in classificationRanges) {
-            let range = classificationRanges[classification];
             let entityTypes = stateKey.universe.entityTypes[classification];
             if (entityTypes) {
                 let count = classificationCounts[classification];
