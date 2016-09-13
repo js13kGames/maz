@@ -9,27 +9,45 @@
     recordAnimationTweenFactory: IRecordAnimationTweenFactory,
     collisionHandlerSearch: ICollisionHandlerSearch, 
     displayTimeMillis: number, 
-    gravity: number
+    gravity: number,
+    saveLevelDepthFunction: IStorageSaveLevelDepthFunction,
+    eatSoundEffect: ISoundEffect,
+    deathSoundEffect: ISoundEffect
 ): IStateStartFunction {
 
     function render(context: CanvasRenderingContext2D, state: ILevelPlayState, dirtyTiles: ILevelPlayMatrix<boolean>, dx: number, dy: number, redraw?: boolean): void {
         let textX: number;
         let textY: number;
         let textStrokeWidth: number;
+
+        let textTime: number;
+        let text: string;
+        let textBounce: boolean;
         let remainingDisplayTimeMillis = displayTimeMillis - state.ageMillis; 
         if (remainingDisplayTimeMillis > 0) {
-            let levelName = state.levelName;
+            text = state.levelName;
+            textTime = remainingDisplayTimeMillis / displayTimeMillis;
+            textBounce = true;
+        } else if (state.gameOverTimeMillis) {
+            text = "YOU DIED";
+            textTime = min(1, (state.ageMillis - state.gameOverTimeMillis) / displayTimeMillis);
+        } else if (state.levelWinTimeMillis) {
+            text = "SUCCESS";
+            textTime = min(1, (state.ageMillis - state.levelWinTimeMillis) / displayTimeMillis);
+        }
+
+        if (text) {
             context.font = state.levelFont;
             let textHeight = state.tileSize * 2;
-            let textWidth = context.measureText(levelName).width;
-            textStrokeWidth = state.outlineWidth;
+            let textWidth = context.measureText(text).width;
+            textStrokeWidth = state.ow;
             textX = (canvas.width - textWidth) / 2;
             textY = (canvas.height - textHeight) / 2;
             let r: IRectangle = {
                 x: textX - dx - textStrokeWidth / 2,
                 y: textY - dy - textStrokeWidth / 2,
-                width: textWidth + textStrokeWidth,
-                height: textHeight + textStrokeWidth
+                w: textWidth + textStrokeWidth,
+                h: textHeight + textStrokeWidth
             };
             levelPlayMatrixIterate(dirtyTiles, state.tileSize, r, dirtyTileSetter);
         }
@@ -53,46 +71,48 @@
 
                     for (let entity of entitiesXY) {
                         if (!entity.renderNotDirty) {
+
+                            // do we have animations
                             let renderContext = entity.renderContext;
-                            renderContext.clearRect(0, 0, entity.width, entity.height);
+                            renderContext.clearRect(0, 0, entity.w, entity.h);
 
                             // render unrotated/flipped
-                            
-                            let orientationTransformation = ORIENTATION_TRANSFORMATIONS[entity.orientation];
+
+                            let orientationTransformation = ORIENTATION_TRANSFORMATIONS[entity.o];
                             renderContext.save();
-                            renderContext.translate(entity.width / 2, entity.height / 2);
+                            renderContext.translate(entity.w / 2, entity.h / 2);
                             if (orientationTransformation.flipY) {
                                 renderContext.scale(1, -1);
                             }
-                            renderContext.rotate(orientationTransformation.rotate * -Math.PI / 2);
-                            renderContext.drawImage(entity.renderMask, -entity.width / 2, -entity.height / 2);
+                            renderContext.rotate(orientationTransformation.r * -pi / 2);
+                            renderContext.drawImage(entity.renderMask, -entity.w / 2, -entity.h / 2);
                             renderContext.restore();
                             renderContext.save();
                             renderContext.globalCompositeOperation = 'source-in';
-                            let background = entity.description.type.backgroundColor;
+                            let background = entity.d.t.bg;
                             if (background) {
                                 renderContext.fillStyle = background;
                             } else {
                                 renderContext.fillStyle = entity.foregroundFill;
                             }
-                            renderContext.fillRect(0, 0, entity.width, entity.height);
+                            renderContext.fillRect(0, 0, entity.w, entity.h);
                             renderContext.globalCompositeOperation = 'source-atop';
                             if (background) {
                                 renderContext.fillStyle = entity.foregroundFill;
-                                renderContext.fillText(entity.description.type.character, entity.offsetX, entity.offsetY);
+                                renderContext.fillText(entity.d.t.character, entity.offx, entity.offy);
                             }
-                            if (entity.description.type.outline) {
+                            if (entity.d.t.outline) {
                                 renderContext.strokeStyle = COLOR_WHITE;
-                                renderContext.lineWidth = state.outlineWidth;
-                                renderContext.strokeText(entity.description.type.character, entity.offsetX, entity.offsetY);
+                                renderContext.lineWidth = state.ow;
+                                renderContext.strokeText(entity.d.t.character, entity.offx, entity.offy);
                             }
                             renderContext.restore();
 
                             // apply animations
                             let previousCanvas = entity.render;
 
-                            for (let animationId in entity.animations) {
-                                let animation = entity.animations[animationId];
+                            for (let animationId in entity.anims) {
+                                let animation = entity.anims[animationId];
                                 let done = true;
                                 for (let tween of animation.tweens) {
                                     let t: number;
@@ -100,17 +120,15 @@
                                         t = (animation.age % tween.durationMillis) / tween.durationMillis;
                                         done = false;
                                     } else {
-                                        t = Math.min(1, animation.age / tween.durationMillis);
+                                        t = min(1, animation.age / tween.durationMillis);
                                         if (t < 1) {
                                             done = false;
                                         }
                                     }
                                     let p = recordEasingFunction(tween.easing, t);
 
-                                    let canvas = <HTMLCanvasElement>document.createElement('canvas');
-                                    canvas.width = previousCanvas.width;
-                                    canvas.height = previousCanvas.height;
-                                    let context = canvas.getContext('2d');
+                                    let canvas = newCanvas(previousCanvas.width, previousCanvas.height);
+                                    let context = getContext(canvas);
                                     context.save();
                                     recordContextEffectFunction(
                                         tween.effect,
@@ -123,32 +141,46 @@
                                     previousCanvas = canvas;
                                 }
                                 if (done) {
-                                    delete entity.animations[animationId];
+                                    if (animationId == ENTITY_ANIMATION_BASE && !entity.state) {
+                                        entity.dead = true;
+                                    } else {
+                                        delete entity.anims[animationId];
+                                    }
                                 }
                             }
-                            if (previousCanvas != entity.render) {
+                            // only required if the thing that moves doesn't have an animation...which it always should
+                            /*
+                            if (entity.render == previousCanvas) {
+                                entity.render = <HTMLCanvasElement>document.createElement('canvas');
+                                entity.render.width = previousCanvas.width;
+                                entity.render.height = previousCanvas.height;
+                                renderContext = entity.render.getContext('2d');
+                                entity.renderContext = renderContext;
+                            }
+                            */
+                            if (entity.render != previousCanvas) {
                                 // re-rotate/flip
-                                renderContext.clearRect(0, 0, entity.width, entity.height);
+                                renderContext.clearRect(0, 0, entity.w, entity.h);
                                 renderContext.save();
-                                renderContext.translate(entity.width / 2, entity.height / 2);
-                                renderContext.rotate(Math.PI / 2 * orientationTransformation.rotate);
+                                renderContext.translate(entity.w / 2, entity.h / 2);
+                                renderContext.rotate(pi / 2 * orientationTransformation.r);
                                 if (orientationTransformation.flipY) {
                                     renderContext.scale(1, -1);
                                 }
-                                renderContext.drawImage(previousCanvas, -entity.width / 2, -entity.height / 2);
+                                renderContext.drawImage(previousCanvas, -entity.w / 2, -entity.h / 2);
                                 renderContext.restore();
-                            //entity.render = previousCanvas;
-                            //entity.renderContext = previousCanvas.getContext('2d');
-                            }
+                                //entity.render = previousCanvas;
+                                //entity.renderContext = previousCanvas.getContext('2d');
 
-                            entity.renderNotDirty = true;
+                                entity.renderNotDirty = true;
+                            }
                         }
-                        let sx = Math.max(0, x - entity.x);
-                        let sy = Math.max(0, y - entity.y);
-                        let dx = Math.max(entity.x, x);
-                        let dy = Math.max(entity.y, y);
-                        let sw = Math.min(state.tileSize - (dx - x), entity.width - sx);
-                        let sh = Math.min(state.tileSize - (dy - y), entity.height - sy);
+                        let sx = max(0, x - entity.x);
+                        let sy = max(0, y - entity.y);
+                        let dx = max(entity.x, x);
+                        let dy = max(entity.y, y);
+                        let sw = min(state.tileSize - (dx - x), entity.w - sx);
+                        let sh = min(state.tileSize - (dy - y), entity.h - sy);
                         if (sw > 0 && sh > 0) {
                             context.drawImage(
                                 entity.render,
@@ -183,20 +215,20 @@
             }
         }
         context.restore();
-        if (remainingDisplayTimeMillis > 0) {
+        
+        if (text) {
             context.save();
             context.textBaseline = 'top';
-            let t = remainingDisplayTimeMillis / displayTimeMillis;
             let p = recordEasingFunction({
-                bounce: true,
-                type: EASING_QUADRATIC_OUT
-            }, t);
+                bounce: textBounce,
+                t: EASING_QUADRATIC_OUT
+            }, textTime);
             context.globalAlpha = p;
             context.fillStyle = state.levelColors[2];
-            context.fillText(state.levelName, textX, textY);
+            context.fillText(text, textX, textY);
             context.lineWidth = textStrokeWidth;
-            context.strokeStyle = '#FFF';
-            context.strokeText(state.levelName, textX, textY);
+            context.strokeStyle = COLOR_WHITE;
+            context.strokeText(text, textX, textY);
             context.restore();
         }
     }
@@ -208,10 +240,15 @@
 
     return function (state: ILevelPlayState, nextStateCallback: IStateCompleteCallback): IRecord<ILevelPlayStateRunner> {
 
-        let intersectionCanvas = <HTMLCanvasElement>document.createElement('canvas');
-        intersectionCanvas.width = state.tileSize;
-        intersectionCanvas.height = state.tileSize;
-        let intersectionContext = intersectionCanvas.getContext('2d');
+        for (let inputId in inputs) {
+            let input = inputs[inputId];
+            input.unread = false;
+            input.a = false;
+            input.t = 0;
+        }
+
+        let intersectionCanvas = newCanvas(state.tileSize, state.tileSize);
+        let intersectionContext = getContext(intersectionCanvas);
 
         let dirtyTiles = levelPlayMatrixCreate(state.width, state.height, function () {
             return true;
@@ -222,105 +259,143 @@
             levelPlayMatrixIterate(dirtyTiles, state.tileSize, entity, dirtyTileSetter);
         }
 
+        function setEntityState(entity: ILevelPlayEntity, newEntityState: EntityState) {
+            if (entity.state != newEntityState) {
+                if (entity.anims[ENTITY_ANIMATION_BASE]) {
+                    delete entity.anims[ENTITY_ANIMATION_BASE];
+                }
+                entity.state = newEntityState;
+                if (newEntityState == ENTITY_STATE_DYING) {
+                    let particles = state.particleFactory(
+                        entity.x + entity.w / 2,
+                        entity.y + entity.h / 2,
+                        entity.d.t.fg,
+                        ceil((entity.w * 8) / state.tileSize),
+                        entity.vx,
+                        entity.vy
+                    );
+                    for (let particle of particles) {
+                        particle.excluded = [];
+                        state.es.push(particle);
+                        setEntityDirty(particle);
+                        levelPlayEntityMatrixAdd(state.matrix, state.tileSize, particle);
+                    }
+                    entity.vx = 0;
+                    entity.vy = 0;
+                }
+            }
+        }
+
+        let sideCounts: { [_: number]: number } = {};
+
         function update(state: ILevelPlayState, duration: number, paused: boolean): boolean {
             let result: boolean;
             let checkEntities: ILevelPlayEntity[] = [];
-            for (let i = state.entities.length; i > 0;) {
+
+            state.energy = max(0, state.energy - duration);
+
+            for (let side of ALL_SIDES) {
+                sideCounts[side] = 0;
+            }
+
+            for (let i = state.es.length; i > 0;) {
                 i--;
-                let entity = state.entities[i];
+                let entity = state.es[i];
                 entity.updateStartX = entity.x;
                 entity.updateStartY = entity.y;
                 entity.excluded = [];
-                if (!paused && (entity.description.type.classification == CLASSIFICATION_PARTICLE || entity.description.mind.type == MIND_PLAYER_1 || state.ageMillis > displayTimeMillis)) {
-                    entity.updateStartOrientation = entity.orientation;
-                    let updateResult = entityUpdate(entity.description.mind, state, entity);
-                    // deal with new entities
-                    if (updateResult) {
-                        if (updateResult.deletedAnimationIds) {
-                            for (let deletedAnimationId of updateResult.deletedAnimationIds) {
-                                delete entity.animations[deletedAnimationId];
+                let sideCount = sideCounts[entity.d.side] + 1;
+                sideCounts[entity.d.side] = sideCount;
+
+                if (!paused && (entity.d.t.classification == CLASSIFICATION_PARTICLE || entity.d.mind.t == MIND_PLAYER_1 || state.ageMillis > displayTimeMillis)) {
+                    entity.updateStartOrientation = entity.o;
+                    if (entity.state) {
+                        let updateResult = entityUpdate(entity.d.mind, state, entity);
+                        // deal with new entities
+                        if (updateResult) {
+                            if (updateResult.deletedAnimationIds) {
+                                for (let deletedAnimationId of updateResult.deletedAnimationIds) {
+                                    delete entity.anims[deletedAnimationId];
+                                }
+                            }
+                            if (updateResult.newAnimations) {
+                                for (let newAnimationId in updateResult.newAnimations) {
+                                    let newAnimation = updateResult.newAnimations[newAnimationId];
+                                    newAnimation.age = 0;
+                                    entity.anims[newAnimationId] = newAnimation;
+                                }
+                            }
+                            if (updateResult.newEntities) {
+                                for (let newEntity of updateResult.newEntities) {
+                                    newEntity.excluded = [];
+                                    state.es.push(newEntity);
+                                    // NOTE do we need to check the new entity?
+                                    setEntityDirty(newEntity);
+                                    levelPlayEntityMatrixAdd(state.matrix, state.tileSize, newEntity);
+                                }
+                            }
+                            if (updateResult.newState) {
+                                nextStateCallback(updateResult.newState);
+                                result = true;
+                            }
+                            setEntityState(entity, updateResult.newEntityState);
+                            if (updateResult.newDirection) {
+                                // TODO orientation should be keyed not just off direction, but also movement type (flying monsters don't turn)
+                                let newOrientation = ORIENTATION_TRANSFORMATIONS[entity.o].n[updateResult.newDirection];
+                                if (newOrientation != entity.o) {
+                                    //result.newAnimations['y'] = animationTurn(200, entity.orientation, newOrientation, entity.width, entity.height);
+                                    let tweens = animationTurnTweenFactory({
+                                        durationMillis: 200,
+                                        orientationFrom: entity.o,
+                                        orientationTo: newOrientation
+                                    }, entity.w, entity.h);
+                                    entity.anims[ENTITY_ANIMATION_TURN] = {
+                                        tweens: tweens,
+                                        age: 0
+                                    };
+                                    entity.o = newOrientation;
+                                }
+                                let vx: number;
+                                let vy: number;
+                                switch (updateResult.newDirection) {
+                                    case DIRECTION_NORTH:
+                                        vx = 0;
+                                        vy = -entity.d.t.sp;
+                                        break;
+                                    case DIRECTION_SOUTH:
+                                        vx = 0;
+                                        vy = entity.d.t.sp;
+                                        break;
+                                    case DIRECTION_EAST:
+                                        vx = entity.d.t.sp;
+                                        vy = 0;
+                                        break;
+                                    case DIRECTION_WEST:
+                                        vx = -entity.d.t.sp;
+                                        vy = 0;
+                                        break;
+                                }
+                                entity.vx = vx;
+                                entity.vy = vy;
+                            }
+                            if (updateResult.dead) {
+                                entity.dead = true;
                             }
                         }
-                        if (updateResult.newAnimations) {
-                            for (let newAnimationId in updateResult.newAnimations) {
-                                let newAnimation = updateResult.newAnimations[newAnimationId];
-                                newAnimation.age = 0;
-                                entity.animations[newAnimationId] = newAnimation;
-                            }
-                        }
-                        if (updateResult.newEntities) {
-                            for (let newEntity of updateResult.newEntities) {
-                                newEntity.excluded = [];
-                                state.entities.push(newEntity);
-                                // NOTE do we need to check the new entity?
-                                setEntityDirty(newEntity);
-                                levelPlayEntityMatrixAdd(state.matrix, state.tileSize, newEntity);
-                            }
-                        }
-                        if (updateResult.newState) {
-                            nextStateCallback(updateResult.newState);
-                            result = true;
-                        }
-                        if (updateResult.newEntityState != entity.state) {
-                            delete entity.animations[ENTITY_ANIMATION_BASE];
-                            entity.state = updateResult.newEntityState;
-                        }
-                        if (updateResult.newDirection) {
-                            // TODO orientation should be keyed not just off direction, but also movement type (flying monsters don't turn)
-                            let newOrientation = ORIENTATION_TRANSFORMATIONS[entity.orientation].next[updateResult.newDirection];
-                            if (newOrientation != entity.orientation) {
-                                //result.newAnimations['y'] = animationTurn(200, entity.orientation, newOrientation, entity.width, entity.height);
-                                let tweens = animationTurnTweenFactory({
-                                    durationMillis: 200,
-                                    orientationFrom: entity.orientation,
-                                    orientationTo: newOrientation
-                                }, entity.width, entity.height);
-                                entity.animations[ENTITY_ANIMATION_TURN] = {
-                                    tweens: tweens,
-                                    age: 0
-                                };
-                                entity.orientation = newOrientation;
-                            }
-                            let vx: number;
-                            let vy: number;
-                            switch (updateResult.newDirection) {
-                                case DIRECTION_NORTH:
-                                    vx = 0;
-                                    vy = -entity.description.type.speed;
-                                    break;
-                                case DIRECTION_SOUTH:
-                                    vx = 0;
-                                    vy = entity.description.type.speed;
-                                    break;
-                                case DIRECTION_EAST:
-                                    vx = entity.description.type.speed;
-                                    vy = 0;
-                                    break;
-                                case DIRECTION_WEST:
-                                    vx = -entity.description.type.speed;
-                                    vy = 0;
-                                    break;
-                            }
-                            entity.velocityX = vx;
-                            entity.velocityY = vy;
-                        }
-                        if (updateResult.dead) {
-                            entity.dead = true;
-                        }
+                        // deal with dead entities
+                        levelPlayEntityRotateRenderMask(entity, entity.updateStartOrientation, entity.o);
                     }
-                    // deal with dead entities
-                    levelPlayEntityRotateRenderMask(entity, entity.updateStartOrientation, entity.orientation);
 
                     if (entity.gravity) {
-                        entity.velocityY += gravity * duration;
+                        entity.vy += gravity * duration;
                     }
 
-                    if (entity.velocityX || entity.velocityY) {
+                    if (entity.vx || entity.vy) {
                         levelPlayEntityMatrixRemove(state.matrix, state.tileSize, entity);
                         setEntityDirty(entity);
 
-                        entity.x += entity.velocityX * duration * state.tileSize;
-                        entity.y += entity.velocityY * duration * state.tileSize;
+                        entity.x += entity.vx * duration * state.tileSize;
+                        entity.y += entity.vy * duration * state.tileSize;
                         checkEntities.push(entity);
 
                         levelPlayEntityMatrixAdd(state.matrix, state.tileSize, entity);
@@ -328,23 +403,27 @@
 
                     }
                 }
-                if (entity.dead) {
-                    state.entities.splice(i, 1);
-                    setEntityDirty(entity);
-                    levelPlayEntityMatrixRemove(state.matrix, state.tileSize, entity);
-                } else if (!entity.animations[ENTITY_ANIMATION_BASE] && entity.state) {
-                    let animation = entity.description.type.animations[entity.state];
+
+                if (!entity.anims[ENTITY_ANIMATION_BASE]) {
+                    let animation = entity.d.t.animations[entity.state];
                     if (animation) {
-                        entity.animations[ENTITY_ANIMATION_BASE] = {
-                            tweens: recordAnimationTweenFactory(animation, entity.width, entity.height),
+                        let tweens = recordAnimationTweenFactory(animation, entity.w, entity.h)
+                        entity.anims[ENTITY_ANIMATION_BASE] = {
+                            tweens: tweens,
                             age: 0
                         }
                     }
                 }
+                if (entity.dead) {
+                    state.es.splice(i, 1);
+                    setEntityDirty(entity);
+                    levelPlayEntityMatrixRemove(state.matrix, state.tileSize, entity);
+                } 
+
 
                 let first = true;
-                for (let animationId in entity.animations) {
-                    let animation = entity.animations[animationId];
+                for (let animationId in entity.anims) {
+                    let animation = entity.anims[animationId];
                     if (first) {
                         setEntityDirty(entity);
                         first = false;
@@ -372,36 +451,36 @@
                             // do they overlap?
                             if (
                                 checkEntity != collidableEntity &&
-                                !checkEntity.dead &&
-                                !collidableEntity.dead &&
+                                !checkEntity.dead && checkEntity.state &&
+                                !collidableEntity.dead && collidableEntity.state &&
                                 !arrayContains(collidableEntity.excluded, checkEntity) &&
                                 overlaps(checkEntity, checkEntity, collidableEntity, collidableEntity)
                             ) {
 
                                 // do they interact in any way?
-                                let checkEntityCollisionResolution = collisionHandlerSearch(checkEntity.description.type, collidableEntity.description.type);
-                                let collisionResolution = collisionHandlerSearch(collidableEntity.description.type, checkEntity.description.type);
+                                let checkEntityCollisionResolution = collisionHandlerSearch(checkEntity, collidableEntity);
+                                let collisionResolution = collisionHandlerSearch(collidableEntity, checkEntity);
 
                                 if (checkEntityCollisionResolution || collisionResolution) {
                                     // work out when they collided by stepping back 
                                     let startTime = 0;
                                     let endTime = duration;
                                     let entityBounds: any = {
-                                        width: collidableEntity.width,
-                                        height: collidableEntity.height
+                                        width: collidableEntity.w,
+                                        height: collidableEntity.h
                                     };
                                     let checkEntityBounds: any = {
-                                        width: checkEntity.width,
-                                        height: checkEntity.height
+                                        width: checkEntity.w,
+                                        height: checkEntity.h
                                     };
                                     for (let step = 0; step < maxCollisionSteps; step++) {
                                         let collisionTime = (endTime + startTime) / 2;
 
-                                        entityBounds.x = collidableEntity.updateStartX + (collidableEntity.velocityX * collisionTime) / state.tileSize;
-                                        entityBounds.y = collidableEntity.updateStartY + (collidableEntity.velocityY * collisionTime) / state.tileSize;
+                                        entityBounds.x = collidableEntity.updateStartX + (collidableEntity.vx * collisionTime) / state.tileSize;
+                                        entityBounds.y = collidableEntity.updateStartY + (collidableEntity.vy * collisionTime) / state.tileSize;
 
-                                        checkEntityBounds.x = checkEntity.updateStartX + (checkEntity.velocityX * collisionTime) / state.tileSize;
-                                        checkEntityBounds.y = checkEntity.updateStartY + (checkEntity.velocityY * collisionTime) / state.tileSize;
+                                        checkEntityBounds.x = checkEntity.updateStartX + (checkEntity.vx * collisionTime) / state.tileSize;
+                                        checkEntityBounds.y = checkEntity.updateStartY + (checkEntity.vy * collisionTime) / state.tileSize;
 
                                         if (overlaps(checkEntity, checkEntityBounds, collidableEntity, entityBounds)) {
                                             endTime = collisionTime;
@@ -452,6 +531,43 @@
                 } while (checkEntities.length);
 
             }
+
+            // deal with exceptional counts
+            if (!sideCounts[SIDE_PLAYER]) {
+                // game over                
+                if (!state.gameOverTimeMillis) {
+                    state.gameOverTimeMillis = state.ageMillis;
+                } else {
+                    // check the inputs to see if we can restart the level
+                    for (let inputId in inputs) {
+                        let input = inputs[inputId];
+                        if (input.t > state.gameOverTimeMillis) {
+                            state.key.suppressScroll = true;
+                            nextStateCallback({
+                                t: STATE_LEVEL_PLAY,
+                                v: state.key
+                            });
+                            break;
+                        }
+                    }
+                }
+            } else if (!sideCounts[SIDE_MONSTER] || !sideCounts[SIDE_COLLECT]) {
+                // no monsters or no collectables - level completed
+                if (!state.levelWinTimeMillis) {
+                    deathSoundEffect(1);
+                    saveLevelDepthFunction(state.key.x, state.key.y, state.z + 1);
+                    state.levelWinTimeMillis = state.ageMillis;
+                    for (let entity of state.es) {
+                        if (entity.d.side == SIDE_COLLECT || entity.d.side == SIDE_MONSTER) {
+                            // blow it up!
+                            setEntityState(entity, ENTITY_STATE_DYING);
+                        }
+                    }
+                    // TODO record the victory
+                }
+            }
+
+
             return result;
         }
 
@@ -463,26 +579,34 @@
                 if (!arrayContains(checkEntities, entity)) {
                     checkEntities.push(entity);
                 }
-                if (collisionResolution.type == COLLISION_RESOLUTION_TYPE_SOLID) {
+                if (collisionResolution.t == COLLISION_RESOLUTION_TYPE_SOLID) {
                     levelPlayEntityMatrixRemove(state.matrix, state.tileSize, entity);
 
-                    entity.x = entity.updateStartX + (entity.velocityX * collisionTime) / state.tileSize;
-                    entity.y = entity.updateStartY + (entity.velocityY * collisionTime) / state.tileSize;
-                    if (entity.velocityX != 0 || entity.velocityY != 0) {
-                        entity.velocityX = 0;
-                        entity.velocityY = 0;
+                    entity.x = entity.updateStartX + (entity.vx * collisionTime) / state.tileSize;
+                    entity.y = entity.updateStartY + (entity.vy * collisionTime) / state.tileSize;
+                    if (entity.vx != 0 || entity.vy != 0) {
+                        entity.vx = 0;
+                        entity.vy = 0;
                     } else {
                         // reset the rotation too!
-                        levelPlayEntityRotateRenderMask(entity, entity.orientation, entity.updateStartOrientation);
-                        entity.orientation = entity.updateStartOrientation;
-                        delete entity.animations[ENTITY_ANIMATION_TURN];
+                        levelPlayEntityRotateRenderMask(entity, entity.o, entity.updateStartOrientation);
+                        entity.o = entity.updateStartOrientation;
+                        delete entity.anims[ENTITY_ANIMATION_TURN];
                     }
 
                     levelPlayEntityMatrixAdd(state.matrix, state.tileSize, entity);
                     setEntityDirty(entity);
 
-                } else if (collisionResolution.type == COLLISION_RESOLUTION_TYPE_EAT) {
+                } else if (collisionResolution.t == COLLISION_RESOLUTION_TYPE_EAT) {
                     withEntity.dead = true;
+                    eatSoundEffect(state.energy / 9999);
+                    state.energy += 700;
+                } else if (collisionResolution.t == COLLISION_RESOLUTION_TYPE_CONFER_ENTITY_STATE) {
+                    let collisionResolutionConferEntityState = <ICollisionResolutionConferEntityState>collisionResolution.v;
+                    if (withEntity.state != collisionResolutionConferEntityState.entityState) {
+                        setEntityState(withEntity, collisionResolutionConferEntityState.entityState);
+                        deathSoundEffect(0);
+                    }
                 }
 
             }
@@ -493,8 +617,8 @@
             let result: boolean;
             if (intersection) {
                 // check the masks overlap
-                let w = Math.ceil(intersection.width);
-                let h = Math.ceil(intersection.height);
+                let w = ceil(intersection.w);
+                let h = ceil(intersection.h);
                 intersectionContext.clearRect(0, 0, w, h);
                 intersectionContext.drawImage(entity1.renderMask, bounds1.x - intersection.x, bounds1.y - intersection.y);
                 intersectionContext.save();
@@ -529,7 +653,7 @@
         let animationCallback: FrameRequestCallback = function (now: number) {
             // register next one first so it can be cancelled
             runner.animationFrameRequestId = requestAnimationFrame(animationCallback);
-            var diff = Math.max(1, Math.min(100, now - lastUpdate));
+            var diff = max(1, min(100, now - lastUpdate));
             lastUpdate = now;
             state.ageMillis += diff;
 
@@ -554,18 +678,19 @@
 
         var animationFrameRequestId = requestAnimationFrame(animationCallback);
 
-        document.onkeydown = function (e: KeyboardEvent) {
+        _d.onkeydown = function (e: KeyboardEvent) {
             let input = inputs[e.keyCode];
             if (input) {
                 input.unread = true;
-                input.active = true;
+                input.a = true;
+                input.t = state.ageMillis;
             }
         };
 
-        document.onkeyup = function (e: KeyboardEvent) {
+        _d.onkeyup = function (e: KeyboardEvent) {
             let input = inputs[e.keyCode];
             if (input) {
-                input.active = false;
+                input.a = false;
             }
         };
         let xDown;
@@ -583,25 +708,27 @@
                 let xDiff = touch.clientX - xDown;
                 let yDiff = touch.clientY - yDown;
 
-                let xDiffAbs = Math.abs(xDiff);
-                let yDiffAbs = Math.abs(yDiff);
+                let xDiffAbs = abs(xDiff);
+                let yDiffAbs = abs(yDiff);
 
                 if (xDiffAbs > minDiff || yDiffAbs > minDiff) {
-                    let input: InputAtomicId;
+                    let inputId: InputAtomicId;
                     if (xDiffAbs > yDiffAbs) {
                         if (xDiff > 0) {
-                            input = INPUT_ATOMIC_ID_RIGHT;
+                            inputId = INPUT_ATOMIC_ID_RIGHT;
                         } else {
-                            input = INPUT_ATOMIC_ID_LEFT;
+                            inputId = INPUT_ATOMIC_ID_LEFT;
                         }
                     } else {
                         if (yDiff > 0) {
-                            input = INPUT_ATOMIC_ID_DOWN;
+                            inputId = INPUT_ATOMIC_ID_DOWN;
                         } else {
-                            input = INPUT_ATOMIC_ID_UP;
+                            inputId = INPUT_ATOMIC_ID_UP;
                         }
                     }
-                    inputs[input].unread = true;
+                    let input = inputs[inputId];
+                    input.unread = true;
+                    input.t = state.ageMillis;
 
                     xDown = null;
                     yDown = null;
@@ -612,8 +739,17 @@
         let touchEnd = function (evt: TouchEvent) {
             if (xDown && yDown) {
                 // it's a tap
-                inputs[INPUT_ATOMIC_ID_ACTION].unread = true;
+                let input = inputs[INPUT_ATOMIC_ID_ACTION];
+                input.unread = true;
+                input.t = state.ageMillis;
             }
+            evt.preventDefault();
+        };
+
+        let click = function (evt: MouseEvent) {
+            let input = inputs[INPUT_ATOMIC_ID_ACTION];
+            input.unread = true;
+            input.t = state.ageMillis;
             evt.preventDefault();
         };
 
@@ -621,9 +757,10 @@
         eventListeners['touchstart'] = touchStart;
         eventListeners['touchmove'] = touchMove;
         eventListeners['touchend'] = touchEnd;
+        eventListeners['click'] = click;
 
         for (let key in eventListeners) {
-            document.addEventListener(key, eventListeners[key]);
+            _d.addEventListener(key, eventListeners[key]);
         }
 
         var runner: ILevelPlayStateRunner = {
@@ -632,8 +769,8 @@
         };
 
         return {
-            type: STATE_LEVEL_PLAY,
-            value: runner
+            t: STATE_LEVEL_PLAY,
+            v: runner
         };
     }
 }

@@ -77,7 +77,7 @@
         for (let i in removablePoints) {
             let removablePointList = removablePoints[i];
             if (removablePointList.length) {
-                let ii = parseInt(i);
+                let ii = _parseInt(i);
                 let xm: number;
                 let ym: number;
                 let add = ii % 2;
@@ -88,7 +88,7 @@
                     xm = 0;
                     ym = 99;
                 }
-                let wallRng = randomNumberGeneratorFactory(stateKey.universe.seed + (stateKey.x + add) * xm + (stateKey.y + add) * ym + stateKey.z);
+                let wallRng = randomNumberGeneratorFactory(stateKey.universe.seed + (stateKey.x + add) * xm + (stateKey.y + add) * ym);
                 let index = wallRng(removablePointList.length);
                 removablePointList.splice(index, 1);
                 // should add all
@@ -97,10 +97,11 @@
         }
         for (let stickyPoint of stickyPoints) {
             let entityDescription: ILevelPlayEntityDescription = {
-                type: wallEntityType,
+                t: wallEntityType,
                 mind: {
-                    type: MIND_INERT
-                }
+                    t: MIND_INERT
+                },
+                side: SIDE_NEUTRAL
             };
             matrix.tiles[stickyPoint.x][stickyPoint.y].push(entityDescription);
         }

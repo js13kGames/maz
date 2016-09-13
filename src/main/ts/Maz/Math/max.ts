@@ -1,0 +1,1 @@
+﻿let max = Math.max;

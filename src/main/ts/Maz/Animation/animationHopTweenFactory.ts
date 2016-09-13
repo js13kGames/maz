@@ -4,11 +4,11 @@
         {
             durationMillis: animation.durationMillis,
             easing: {
-                type: EASING_QUADRATIC_IN_OUT
+                t: EASING_QUADRATIC_IN_OUT
             },
             effect: {
-                type: EFFECT_SCALE,
-                value: {
+                t: EFFECT_SCALE,
+                v: {
                     xStart: 1 - animation.squishXScale / 2,
                     yStart: 1 - animation.squishYScale / 2,
                     dx: animation.squishXScale,
@@ -22,12 +22,12 @@
         {
             durationMillis: animation.durationMillis,
             easing: {
-                type: EASING_QUADRATIC_OUT,
+                t: EASING_QUADRATIC_OUT,
                 bounce: true
             },
             effect: {
-                type: EFFECT_TRANSLATE,
-                value: {
+                t: EFFECT_TRANSLATE,
+                v: {
                     xStart: 0,
                     yStart: animation.hopHeightScale * height / 2,
                     dx: 0,

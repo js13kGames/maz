@@ -1,0 +1,1 @@
+﻿let floor = Math.floor;

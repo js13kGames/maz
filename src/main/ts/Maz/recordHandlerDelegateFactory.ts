@@ -1,10 +1,10 @@
 ﻿function recordHandlerDelegateFactory<V, R>(handlers: { [_: number]: IRecordHandlerFunction<V, R> }, defaultValue?:R): IRecordHandlerFunction<IRecord<V>, R> {
     var f = function (r: IRecord<V>, ...args: any[]) {
         let result: R;
-        var handler = handlers[r.type];
+        var handler = handlers[r.t];
         if (handler) {
             // TODO can we just call handler(r.value, args)?
-            args.splice(0, 0, r.value);
+            args.splice(0, 0, r.v);
             result = handler.apply(r, args);
         } else {
             result = defaultValue;

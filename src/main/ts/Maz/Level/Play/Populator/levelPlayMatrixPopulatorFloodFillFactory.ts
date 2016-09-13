@@ -5,12 +5,16 @@
     fillQuantity: number,
     fillQuantityDifficultyMultiplier: number,
     maxAttempts: number,
-    filter: (entities: ILevelPlayEntityDescription[], matrix?: ILevelPlayMatrix<ILevelPlayEntityDescription[]>, x?: number, y?: number) => boolean
+    filter: (entities: ILevelPlayEntityDescription[], matrix?: ILevelPlayMatrix<ILevelPlayEntityDescription[]>, x?: number, y?: number) => boolean, 
+    side: Side,
+    classification: Classification
 ): ILevelPlayMatrixPopulator {
     return function (stateKey: ILevelPlayStateKey, matrix: ILevelPlayMatrix<ILevelPlayEntityDescription[]>, validEntityTypes: IEntityType[], difficulty: number, rng: IRandomNumberGenerator): void {
         let fills = minFills + rng(maxFills - minFills + 1);
-        let fillsRemaining = Math.ceil(fills + fillDifficultyMultiplier * difficulty);
+        let fillsRemaining = ceil(fills + fillDifficultyMultiplier * difficulty);
         let attemptsRemaining = maxAttempts + fillsRemaining;
+          
+        let count = 0;
 
         while (fillsRemaining > 0 && attemptsRemaining > 0) {
             attemptsRemaining--;
@@ -18,14 +22,14 @@
             // pick a spot
             let x = rng(matrix.width);
             let y = rng(matrix.height);
-            let entityTypeIndex = rng(validEntityTypes.length);
-            let entityType = validEntityTypes[entityTypeIndex];
+
+            let entityTypeFunction = levelPlayMatrixPopulatorGetBestEntityType(validEntityTypes, count, difficulty, rng);
 
             function accept(x: number, y: number, points: IPoint[]) {
                 let entityDescriptions = matrix.tiles[x][y];
                 if (filter(entityDescriptions, matrix, x, y)) {
                     for (let entityDescription of entityDescriptions) {
-                        if (entityDescription.type == entityType) {
+                        if (entityDescription.t.classification == classification) {
                             return; // same as false
                         }
                     }
@@ -40,11 +44,12 @@
 
             // does the spot match the filter?
             if (accept(x, y, [])) {
+                count++;
                 fillsRemaining--;
 
                 // flood fill (one) entity type
                 let positions: IPoint[] = [{ x: x, y: y }];
-                let quantity = Math.ceil(fillQuantity + fillQuantityDifficultyMultiplier * difficulty);
+                let quantity = ceil(fillQuantity + fillQuantityDifficultyMultiplier * difficulty);
                 let positionIndex = 0;
                 while (positionIndex < quantity && positionIndex < positions.length) {
                     let position = positions[positionIndex];
@@ -52,10 +57,11 @@
                     };
                     matrix.tiles[position.x][position.y].push({
                         mind: {
-                            type: MIND_MONSTER,
-                            value: monsterMind
+                            t: MIND_MONSTER,
+                            v: monsterMind
                         },
-                        type: entityType
+                        t: entityTypeFunction(),
+                        side: side
                     });
 
                     for (let offset of POINT_DIRECTIONS_CARDINAL) {

@@ -1,25 +1,25 @@
 ﻿interface ILevelPlayEntity extends IRectangle {
 
-    description: ILevelPlayEntityDescription;
+    d: ILevelPlayEntityDescription;
     renderMask: HTMLCanvasElement;
     render: HTMLCanvasElement;
     renderContext: CanvasRenderingContext2D;
     renderNotDirty?: boolean;
-    orientation: Orientation;
-    offsetX: number;
-    offsetY: number;
+    o: Orientation;
+    offx: number;
+    offy: number;
     font: string;
-    rotation: number;
+    r: number;
     foregroundFill: string | CanvasGradient;
 
     state: EntityState;
-    animations: { [_:number]:ILevelPlayEntityAnimation };
+    anims: { [_:number]:ILevelPlayEntityAnimation };
 
     dead?: boolean;
 
     // movement
-    velocityX: number;
-    velocityY: number;
+    vx: number;
+    vy: number;
     updateStartOrientation?: Orientation;
     gravity?: boolean;
 

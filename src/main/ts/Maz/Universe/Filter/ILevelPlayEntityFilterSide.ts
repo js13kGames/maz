@@ -1,0 +1,3 @@
+﻿interface ILevelPlayEntityFilterSide {
+    sides: Side[];
+}

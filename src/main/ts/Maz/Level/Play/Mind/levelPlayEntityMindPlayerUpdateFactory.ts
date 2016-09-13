@@ -11,7 +11,7 @@ function levelPlayEntityMindPlayerUpdateFactory(
 
     function read(inputId: InputAtomicId): boolean {
         let input = inputs[inputId];
-        let result = input.active || input.unread;
+        let result = input.a || input.unread;
         if (result) {
             input.unread = false;
         }
@@ -37,13 +37,13 @@ function levelPlayEntityMindPlayerUpdateFactory(
         if (directionInput) {
             mind.desiredDirection = directionInput;
         }
-        let originalOrientation = entity.orientation;
+        let originalOrientation = entity.o;
         let direction: Direction;
         let centerMargin = tileCenterFraction * state.tileSize;
         if (mind.desiredDirection == upKeyCode || mind.desiredDirection == downKeyCode) {
             // are we in the margin where we can actually go in the direction we want to ?
-            let dx = ((entity.x + entity.width / 2) % state.tileSize) - state.tileSize / 2;
-            if (Math.abs(dx) > centerMargin) {
+            let dx = ((entity.x + entity.w / 2) % state.tileSize) - state.tileSize / 2;
+            if (abs(dx) > centerMargin) {
                 if (dx > 0) {
                     direction = DIRECTION_WEST;
                 } else {
@@ -57,8 +57,8 @@ function levelPlayEntityMindPlayerUpdateFactory(
                 }
             }
         } else if (mind.desiredDirection == leftKeyCode || mind.desiredDirection == rightKeyCode) {
-            let dy = ((entity.y + entity.height / 2) % state.tileSize) - state.tileSize / 2;
-            if (Math.abs(dy) > centerMargin) {
+            let dy = ((entity.y + entity.h / 2) % state.tileSize) - state.tileSize / 2;
+            if (abs(dy) > centerMargin) {
                 if (dy > 0) {
                     direction = DIRECTION_NORTH;
                 } else {
@@ -75,37 +75,33 @@ function levelPlayEntityMindPlayerUpdateFactory(
         let result: ILevelPlayEntityMindUpdateResult = {
             newAnimations: {}
         };
-        if (entity.velocityX || entity.velocityY || directionInput) {
+        if (entity.vx || entity.vy || directionInput) {
             result.newEntityState = ENTITY_STATE_MOVING;
         } else {
             result.newEntityState = ENTITY_STATE_IDLE;
-        }
-        if (directionInput) {
-            result.newEntities = state.particleFactory(entity.x + entity.width / 2, entity.y + entity.height / 2, entity.description.type.foregroundColor, 4);
         }
         if (direction) {
             result.newDirection = direction;
         }
         let newStateDirection: Direction;
-        if (entity.x < -entity.width) {
+        if (entity.x < -entity.w) {
             newStateDirection = DIRECTION_EAST;
         } else if (entity.x > state.width * state.tileSize) {
             newStateDirection = DIRECTION_WEST;
-        } else if (entity.y < -entity.height) {
+        } else if (entity.y < -entity.h) {
             newStateDirection = DIRECTION_SOUTH;
         } else if (entity.y > state.height * state.tileSize) {
             newStateDirection = DIRECTION_NORTH;
         }
         if (newStateDirection) {
             let dir = POINT_DIRECTIONS_CARDINAL[newStateDirection - 1];
-            state.key.players[0].initialOrientation = entity.orientation;
+            state.key.players[0].initialOrientation = entity.o;
             result.newState = {
-                type: STATE_LEVEL_PLAY,
-                value: {
+                t: STATE_LEVEL_PLAY,
+                v: {
                     universe: state.key.universe,
                     x: state.key.x - dir.x,
                     y: state.key.y - dir.y,
-                    z: state.key.z,
                     playerEntryPoint: newStateDirection,
                     players: state.key.players
                 }

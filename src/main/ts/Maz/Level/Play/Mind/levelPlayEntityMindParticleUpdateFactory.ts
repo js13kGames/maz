@@ -2,7 +2,7 @@
 
     return function (mind: ILevelPlayEntityMindMonster, state: ILevelPlayState, entity: ILevelPlayEntity): ILevelPlayEntityMindUpdateResult {
         let result: ILevelPlayEntityMindUpdateResult = {};
-        result.dead = !entity.animations[ENTITY_ANIMATION_TEMP];
+        result.dead = !entity.anims[ENTITY_ANIMATION_TEMP];
         return result;
     }
 }

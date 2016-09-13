@@ -1,12 +1,12 @@
-﻿function collisionHandlerSearchFactory(recordEntityTypeFilterFunction: IRecordEntityTypeFilterFunction): ICollisionHandlerSearch {
-    return function (entityTypeFrom: IEntityType, entityTypeWith: IEntityType) {
-        let entityType = entityTypeFrom;
+﻿function collisionHandlerSearchFactory(recordEntityFilterFunction: IRecordLevelPlayEntityFilterFunction): ICollisionHandlerSearch {
+    return function (entityFrom: ILevelPlayEntity, entityWith: ILevelPlayEntity) {
+        let entityType = entityFrom.d.t;
         while (entityType) {
             for (let collisionHandler of entityType.collisionHandlers) {
                 let ok = true;
 
                 for (let filter of collisionHandler.filters) {
-                    ok = recordEntityTypeFilterFunction(filter, entityTypeWith);
+                    ok = recordEntityFilterFunction(filter, entityWith);
                     if (!ok) {
                         break;
                     }

@@ -12,15 +12,15 @@ type Orientation = number;
 
 interface IOrientationTransformation {
     flipY?: boolean;
-    rotate: number;
-    next: { [_: number]: Orientation };
+    r: number;
+    n: { [_: number]: Orientation };
 }
 
 function initOrientationTransformations(): { [_: number]: IOrientationTransformation } {
     let orientationTransformations: { [_: number]: IOrientationTransformation } = {};
     orientationTransformations[ORIENTATION_FACING_LEFT_FEET_UP] = {
-        rotate: 2,
-        next: orientationCreateTargets(
+        r: 2,
+        n: orientationCreateTargets(
             ORIENTATION_FACING_UP_FEET_RIGHT,
             ORIENTATION_FACING_DOWN_FEET_LEFT,
             ORIENTATION_FACING_LEFT_FEET_UP,
@@ -29,8 +29,8 @@ function initOrientationTransformations(): { [_: number]: IOrientationTransforma
     };
     orientationTransformations[ORIENTATION_FACING_LEFT_FEET_DOWN] = {
         flipY: true,
-        rotate: 2,
-        next: orientationCreateTargets(
+        r: 2,
+        n: orientationCreateTargets(
             ORIENTATION_FACING_UP_FEET_LEFT,
             ORIENTATION_FACING_DOWN_FEET_RIGHT,
             ORIENTATION_FACING_LEFT_FEET_DOWN,
@@ -39,8 +39,8 @@ function initOrientationTransformations(): { [_: number]: IOrientationTransforma
     };
     orientationTransformations[ORIENTATION_FACING_RIGHT_FEET_UP] = {
         flipY: true,
-        rotate: 0,
-        next: orientationCreateTargets(
+        r: 0,
+        n: orientationCreateTargets(
             ORIENTATION_FACING_UP_FEET_LEFT,
             ORIENTATION_FACING_DOWN_FEET_RIGHT,
             ORIENTATION_FACING_LEFT_FEET_UP,
@@ -48,8 +48,8 @@ function initOrientationTransformations(): { [_: number]: IOrientationTransforma
         )
     };
     orientationTransformations[ORIENTATION_FACING_RIGHT_FEET_DOWN] = {
-        rotate: 0,
-        next: orientationCreateTargets(
+        r: 0,
+        n: orientationCreateTargets(
             ORIENTATION_FACING_UP_FEET_RIGHT,
             ORIENTATION_FACING_DOWN_FEET_LEFT,
             ORIENTATION_FACING_LEFT_FEET_DOWN,
@@ -57,8 +57,8 @@ function initOrientationTransformations(): { [_: number]: IOrientationTransforma
         )
     };
     orientationTransformations[ORIENTATION_FACING_UP_FEET_RIGHT] = {
-        rotate: 3,
-        next: orientationCreateTargets(
+        r: 3,
+        n: orientationCreateTargets(
             ORIENTATION_FACING_UP_FEET_RIGHT,
             ORIENTATION_FACING_DOWN_FEET_RIGHT,
             ORIENTATION_FACING_LEFT_FEET_DOWN,
@@ -67,8 +67,8 @@ function initOrientationTransformations(): { [_: number]: IOrientationTransforma
     };
     orientationTransformations[ORIENTATION_FACING_UP_FEET_LEFT] = {
         flipY: true,
-        rotate: 3,
-        next: orientationCreateTargets(
+        r: 3,
+        n: orientationCreateTargets(
             ORIENTATION_FACING_UP_FEET_LEFT,
             ORIENTATION_FACING_DOWN_FEET_LEFT,
             ORIENTATION_FACING_LEFT_FEET_DOWN,
@@ -77,8 +77,8 @@ function initOrientationTransformations(): { [_: number]: IOrientationTransforma
     };
     orientationTransformations[ORIENTATION_FACING_DOWN_FEET_RIGHT] = {
         flipY: true,
-        rotate: 1,
-        next: orientationCreateTargets(
+        r: 1,
+        n: orientationCreateTargets(
             ORIENTATION_FACING_UP_FEET_RIGHT,
             ORIENTATION_FACING_DOWN_FEET_RIGHT,
             ORIENTATION_FACING_LEFT_FEET_DOWN,
@@ -86,8 +86,8 @@ function initOrientationTransformations(): { [_: number]: IOrientationTransforma
         )
     };
     orientationTransformations[ORIENTATION_FACING_DOWN_FEET_LEFT] = {
-        rotate: 1,
-        next: orientationCreateTargets(
+        r: 1,
+        n: orientationCreateTargets(
             ORIENTATION_FACING_UP_FEET_LEFT,
             ORIENTATION_FACING_DOWN_FEET_LEFT,
             ORIENTATION_FACING_LEFT_FEET_DOWN,

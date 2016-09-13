@@ -2,11 +2,11 @@
     return [{
         durationMillis: animation.durationMillis,
         easing: {
-            type: EASING_QUADRATIC_OUT
+            t: EASING_QUADRATIC_OUT
         },
         effect: {
-            type: EFFECT_ALPHA, 
-            value: {
+            t: EFFECT_ALPHA, 
+            v: {
                 startAlpha: animation.startAlpha,
                 dAlpha: animation.dAlpha                
             }

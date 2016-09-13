@@ -1,0 +1,3 @@
+﻿interface ICollisionResolutionConferEntityState {
+    entityState: EntityState
+}

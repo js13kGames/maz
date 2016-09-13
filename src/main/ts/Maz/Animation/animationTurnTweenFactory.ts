@@ -6,11 +6,11 @@
         tweens.push({
             durationMillis: animation.durationMillis,
             easing: {
-                type: EASING_QUADRATIC_IN_OUT
+                t: EASING_QUADRATIC_IN_OUT
             },
             effect: {
-                type: EFFECT_SCALE,
-                value: {
+                t: EFFECT_SCALE,
+                v: {
                     xStart: -1,
                     yStart: 1,
                     dx: 2,
@@ -22,22 +22,22 @@
             }
         });
     }
-    if (orientationTransformationFrom.rotate != orientationTransformationTo.rotate && Math.abs(orientationTransformationFrom.rotate - orientationTransformationTo.rotate) != 2) {
+    if (orientationTransformationFrom.r != orientationTransformationTo.r && abs(orientationTransformationFrom.r - orientationTransformationTo.r) != 2) {
         let dAngle: number;
-        let next = (orientationTransformationFrom.rotate + 1) % 4 == orientationTransformationTo.rotate;
+        let next = (orientationTransformationFrom.r + 1) % 4 == orientationTransformationTo.r;
         if (next && orientationTransformationFrom.flipY || !next && !orientationTransformationFrom.flipY) {
-            dAngle = Math.PI / 2;
+            dAngle = pi / 2;
         } else {
-            dAngle = -Math.PI / 2;
+            dAngle = -pi / 2;
         }
         tweens.push({
             durationMillis: animation.durationMillis,
             easing: {
-                type: EASING_LINEAR
+                t: EASING_LINEAR
             },
             effect: {
-                type: EFFECT_ROTATE,
-                value: {
+                t: EFFECT_ROTATE,
+                v: {
                     angleStart: dAngle,
                     dAngle: -dAngle,
                     cx: 0.5,

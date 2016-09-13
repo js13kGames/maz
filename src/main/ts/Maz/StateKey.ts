@@ -1,4 +1,4 @@
 ﻿type StateKeyId = number;
 
-type StateKey = IntroStateKey | ILevelPlayStateKey;
+type StateKey = IIntroStateKey | ILevelPlayStateKey;
 

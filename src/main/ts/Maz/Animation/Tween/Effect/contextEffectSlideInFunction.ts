@@ -13,7 +13,7 @@
     let w = destinationCanvas.width;
     let h = destinationCanvas.height;
 
-    switch (effect.direction) {
+    switch (effect.d) {
         case DIRECTION_NORTH:
             dx = 0;
             dy = -h;

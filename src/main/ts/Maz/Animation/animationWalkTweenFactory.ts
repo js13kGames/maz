@@ -3,12 +3,12 @@
         {
             durationMillis: animation.durationMillis,
             easing: {
-                type: EASING_QUADRATIC_IN_OUT,
+                t: EASING_QUADRATIC_IN_OUT,
                 bounce: true
             },
             effect: {
-                type: EFFECT_ROTATE,
-                value: {
+                t: EFFECT_ROTATE,
+                v: {
                     angleStart: -animation.rotateAngle / 2,
                     dAngle: animation.rotateAngle,
                     cx: 0.5,
@@ -20,12 +20,12 @@
         {
             durationMillis: animation.durationMillis / 2,
             easing: {
-                type: EASING_LINEAR,
+                t: EASING_LINEAR,
                 bounce: true
             },
             effect: {
-                type: EFFECT_SCALE,
-                value: {
+                t: EFFECT_SCALE,
+                v: {
                     xStart: 1-animation.scaleX/2,
                     yStart: 1,
                     dx: animation.scaleX,
@@ -39,12 +39,12 @@
         {
             durationMillis: animation.durationMillis / 2,
             easing: {
-                type: EASING_QUADRATIC_OUT,
+                t: EASING_QUADRATIC_OUT,
                 bounce: true
             },
             effect: {
-                type: EFFECT_TRANSLATE,
-                value: {
+                t: EFFECT_TRANSLATE,
+                v: {
                     xStart: 0,
                     yStart: animation.hopHeightScale * height / 2,
                     dx: 0,

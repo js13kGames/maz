@@ -1,51 +1,69 @@
 ﻿let ORIENTATION_TRANSFORMATIONS: { [_: number]: IOrientationTransformation };
 
-window.onload = function () {
+let _w = window;
+let _d = document;
+
+_w.onload = function () {
+
+    var audioContext: AudioContext;
+    if (_w["AudioContext"]) {
+        audioContext = new AudioContext();
+        //    } else if (_w["webkitAudioContext"]) {
+        //        audioContext = new webkitAudioContext();
+    }
 
     ORIENTATION_TRANSFORMATIONS = initOrientationTransformations();
 
     let minTiles = 250;
     let tileMargin = 0.05;
+    let entityTypeBits = 3;
 
-    let collisionHandlerSearch = collisionHandlerSearchFactory(entityTypeFilterInit());
+    let collisionHandlerSearch = collisionHandlerSearchFactory(levelPlayEntityFilterInit());
 
     let matrixPopulators: { [_: number]: ILevelPlayMatrixPopulator[] } = {};
 
     let wallEntityType: IEntityType = {
-        backgroundColor: '#AA9',
+        bg: '#AA9',
         bold: true,
         character: 'x',
         classification: CLASSIFICATION_WALL,
-        foregroundColor: ['#998'],
-        speed: 0,
+        fg: ['#998'],
+        sp: 0,
         observationTimeoutMillis: 10000,
         minDecisionTimeoutMillis: 500,
         varianceDecisionTimeoutMillis: 100,
-        children: [],
         collisionHandlers: [],
         animations: {}
     };
 
+    let particleAnimations: { [_: number]: IRecord<Animation> } = {};
+    particleAnimations[ENTITY_STATE_DYING] = {
+        t: ANIMATION_TYPE_FADE,
+        v: {
+            durationMillis: 999,
+            startAlpha: 1,
+            dAlpha: -1
+        }
+    };
     let particleEntityType: IEntityType = {
         character: '?',
         classification: CLASSIFICATION_PARTICLE,
-        foregroundColor: [], 
-        speed: 0.02,
+        fg: [], 
+        sp: 0.03,
         observationTimeoutMillis: 10000,
         minDecisionTimeoutMillis: 300,
         varianceDecisionTimeoutMillis: 100,
-        children: [],
         collisionHandlers: [], 
-        animations: {} 
+        animations: particleAnimations 
     };
 
     matrixPopulators[CLASSIFICATION_WALL] = [
-        levelPlayMatrixPopulatorBoundaryProxyFactory(levelPlayMatrixPopulatorFillerProxyFactory(levelPlayMatrixPopulatorRectangleFactory(minTiles, false, 0, false)), wallEntityType),
-        levelPlayMatrixPopulatorBoundaryProxyFactory(levelPlayMatrixPopulatorFillerProxyFactory(levelPlayMatrixPopulatorRectangleFactory(minTiles, false, 0, true)), wallEntityType),
-        levelPlayMatrixPopulatorBoundaryProxyFactory(levelPlayMatrixPopulatorFillerProxyFactory(levelPlayMatrixPopulatorRectangleFactory(minTiles, false, 0.2, false)), wallEntityType),
-        levelPlayMatrixPopulatorBoundaryProxyFactory(levelPlayMatrixPopulatorFillerProxyFactory(levelPlayMatrixPopulatorRectangleFactory(minTiles, false, 0.5, true)), wallEntityType),
-        levelPlayMatrixPopulatorBoundaryProxyFactory(levelPlayMatrixPopulatorFillerProxyFactory(levelPlayMatrixPopulatorRectangleFactory(minTiles, true, 0, false)), wallEntityType),
-        levelPlayMatrixPopulatorBoundaryProxyFactory(levelPlayMatrixPopulatorFillerProxyFactory(levelPlayMatrixPopulatorRectangleFactory(minTiles, true, 0, true)), wallEntityType)
+        levelPlayMatrixPopulatorBoundaryProxyFactory(levelPlayMatrixPopulatorFillerProxyFactory(levelPlayMatrixPopulatorRectangleFactory(minTiles, false, 0, false, SIDE_NEUTRAL)), wallEntityType),
+        levelPlayMatrixPopulatorBoundaryProxyFactory(levelPlayMatrixPopulatorFillerProxyFactory(levelPlayMatrixPopulatorRectangleFactory(minTiles, false, 0, true, SIDE_NEUTRAL)), wallEntityType),
+        levelPlayMatrixPopulatorBoundaryProxyFactory(levelPlayMatrixPopulatorFillerProxyFactory(levelPlayMatrixPopulatorRectangleFactory(minTiles, false, 0.2, false, SIDE_NEUTRAL)), wallEntityType),
+        levelPlayMatrixPopulatorBoundaryProxyFactory(levelPlayMatrixPopulatorFillerProxyFactory(levelPlayMatrixPopulatorRectangleFactory(minTiles, false, 0.5, true, SIDE_NEUTRAL)), wallEntityType),
+        levelPlayMatrixPopulatorBoundaryProxyFactory(levelPlayMatrixPopulatorFillerProxyFactory(levelPlayMatrixPopulatorRectangleFactory(minTiles, true, 0, false, SIDE_NEUTRAL)), wallEntityType),
+        levelPlayMatrixPopulatorBoundaryProxyFactory(levelPlayMatrixPopulatorFillerProxyFactory(levelPlayMatrixPopulatorRectangleFactory(minTiles, true, 0, true, SIDE_NEUTRAL)), wallEntityType)
     ];
 
     function monsterFilterFactory(padding: number) {
@@ -54,7 +72,7 @@ window.onload = function () {
                 return false;
             } else {
                 for (let entityDescription of entityDescriptions) {
-                    if (entityDescription.type.classification == CLASSIFICATION_WALL || entityDescription.type.classification == CLASSIFICATION_OBSTACLE) {
+                    if (entityDescription.t.classification == CLASSIFICATION_WALL || entityDescription.t.classification == CLASSIFICATION_OBSTACLE) {
                         return false;
                     }
                 }
@@ -64,10 +82,10 @@ window.onload = function () {
     }
 
     matrixPopulators[CLASSIFICATION_MONSTER] = [
-        levelPlayMatrixPopulatorFloodFillFactory(2, 6, 1, 1, 0, 40, monsterFilterFactory(2))
+        levelPlayMatrixPopulatorFloodFillFactory(2, 6, 1, 1, 0, 40, monsterFilterFactory(2), SIDE_MONSTER, CLASSIFICATION_MONSTER)
     ];
     matrixPopulators[CLASSIFICATION_COLLECTABLE_COMMON] = [
-        levelPlayMatrixPopulatorFloodFillFactory(1, 1, 0, minTiles, 0, 20, monsterFilterFactory(1))
+        levelPlayMatrixPopulatorFloodFillFactory(1, 1, 0, minTiles, 0, 20, monsterFilterFactory(1), SIDE_COLLECT, CLASSIFICATION_COLLECTABLE_COMMON)
     ]
 
     var playerInputs: { [_: number]: IInputAtomic } = {};
@@ -99,14 +117,14 @@ window.onload = function () {
 
     var levelPlayMindHandler = recordHandlerDelegateFactory(levelPlayMindUpdateHandlers);
 
-    var contentElement = document.body;
+    var contentElement = _d.body;
 
-    var introElement = document.getElementById('i');
-    var introPlayButton = document.getElementById('ip');
-    var introRestartButton = document.getElementById('r');
+    var introElement = _d.getElementById('i');
+    var introPlayButton = _d.getElementById('v');
+    var introRestartButton = _d.getElementById('w');
 
-    var levelPlayElement = <HTMLCanvasElement>document.getElementById('p');
-    var levelPlayContext = levelPlayElement.getContext('2d');
+    var levelPlayElement = <HTMLCanvasElement>_d.getElementById('p');
+    var levelPlayContext = getContext(levelPlayElement);
 
     let classificationRanges: { [_: number]: IRange } = {};
     classificationRanges[CLASSIFICATION_MONSTER] = {
@@ -135,7 +153,8 @@ window.onload = function () {
     var initHandlers: { [_: number]: IRecordHandlerFunction<StateKey, IRecord<State>> } = {};
     initHandlers[STATE_INTRO] = introInit;
     initHandlers[STATE_LEVEL_PLAY] = levelPlayInitFactory(
-        tileMargin * 4, 
+        tileMargin * 4,
+        entityTypeBits,
         matrixPopulators,
         contentElement,
         levelPlayElement,
@@ -144,12 +163,15 @@ window.onload = function () {
         7,
         classificationRanges,
         particleEntityType,
-        animationFactory
+        animationFactory,
+        calculateCharacterAffinities(),
+        localStorageLoadLevelDepthFunction,
+        localStorageSaveLocationFunction
     );
     var initHandler = recordHandlerDelegateFactory(initHandlers);
 
     var startHandlers: { [_: number]: IRecordHandlerFunction<State, IRecord<StateRunner>> } = {};
-    var introStart = introStartFactory(introElement, introPlayButton, introRestartButton);
+    var introStart = introStartFactory(introElement, introPlayButton, introRestartButton, localStorageLoadLocationFunction, localStorageSaveLocationFunction, entityTypeBits);
     startHandlers[STATE_INTRO] = introStart;
     startHandlers[STATE_LEVEL_PLAY] = levelPlayStartFactory(
         levelPlayElement,
@@ -157,12 +179,15 @@ window.onload = function () {
         levelPlayMindHandler,
         playerInputs,
         5,
-        easingInit(), 
+        easingInit(),
         effectInit(),
         animationFactory,
         collisionHandlerSearch,
-        4000, 
-        0.00008
+        4000,
+        0.00008,
+        localStorageSaveLevelDepthFunction,
+        webAudioToneSoundEffectFactory(audioContext, 'triangle', 1200, 1800, 400, 0, 0.08, 0.02, 0.15),
+        webAudioToneSoundEffectFactory(audioContext, 'sawtooth', 300, -100, 100, 0.01, 0.05, 0.1, 0.3)
     );
     var startHandler = recordHandlerDelegateFactory(startHandlers);
 
@@ -181,16 +206,19 @@ window.onload = function () {
         return true;
     };
     var currentStateKey: IRecord<StateKey> = {
-        type: STATE_INTRO
+        t: STATE_INTRO,
+        v: {
+
+        }
     };
     var currentState = initHandler(currentStateKey);
     var currentStateRunner = startHandler(currentState, callback);
 
-    window.onresize = function () {
+    _w.onresize = function () {
         stopHandler(currentStateRunner, currentStateKey);
-        if (currentStateKey.type == STATE_LEVEL_PLAY) {
+        if (currentStateKey.t == STATE_LEVEL_PLAY) {
             // disable scrolling in
-            let stateKeyLevelPlay = <ILevelPlayStateKey>currentStateKey.value;
+            let stateKeyLevelPlay = <ILevelPlayStateKey>currentStateKey.v;
             stateKeyLevelPlay.suppressScroll = true;
         }
         currentState = initHandler(currentStateKey);

@@ -3,6 +3,8 @@
         cx: number, 
         cy: number,
         colors: string[], 
-        quantity: number
+        quantity: number, 
+        baseVelocityX: number, 
+        baseVelocityY
     ): ILevelPlayEntity[]
 }

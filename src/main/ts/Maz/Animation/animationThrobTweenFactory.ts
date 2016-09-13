@@ -3,12 +3,12 @@
         {
             durationMillis: animation.durationMillis,
             easing: {
-                type: EASING_QUADRATIC_IN_OUT,
+                t: EASING_QUADRATIC_IN_OUT,
                 bounce: true
             },
             effect: {
-                type: EFFECT_SCALE,
-                value: {
+                t: EFFECT_SCALE,
+                v: {
                     xStart: 1 - animation.scaleX / 2,
                     yStart: 1 - animation.scaleY / 2,
                     dx: animation.scaleX,

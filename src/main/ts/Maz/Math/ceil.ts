@@ -1,0 +1,1 @@
+﻿let ceil = Math.ceil;

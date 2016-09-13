@@ -1,3 +1,3 @@
-﻿interface IRecordEntityTypeFilterFunction {
-    (filterRecord: IRecord<EntityTypeFilter>, entityType: IEntityType): boolean;
+﻿interface IRecordLevelPlayEntityFilterFunction {
+    (filterRecord: IRecord<LevelPlayEntityFilter>, entity: ILevelPlayEntity): boolean;
 }

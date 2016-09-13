@@ -1,5 +1,6 @@
 ﻿function levelPlayInitFactory(
     tileMargin: number,
+    entityTypeBits: number,
     matrixPopulators: { [_: number]: ILevelPlayMatrixPopulator[] },
     containerElement: HTMLElement,
     canvasElement: HTMLCanvasElement,
@@ -8,8 +9,17 @@
     minimumDimension: number,
     classificationRanges: { [_: number]: IRange }, 
     particleType: IEntityType,
-    recordAnimationTweenFactory: IRecordAnimationTweenFactory
+    recordAnimationTweenFactory: IRecordAnimationTweenFactory,
+    characterAffinities: { [_: string]: string },
+    loadDepthFunction: IStorageLoadLevelDepthFunction,
+    saveLocationFunction: IStorageSaveLocationFunction
 ): IStateInitFunction {
+
+    let entityTypeMask = 0;
+    for (let i = 0; i < entityTypeBits; i++) {
+        entityTypeMask = (entityTypeMask << 1) | 1;        
+    }
+    let entityTypeCount = 1 << entityTypeBits;
 
     function fit(char: string, tileSize: number, tight: boolean, bold: boolean, outlineWidth: number, padding: number, context: CanvasRenderingContext2D) {
         let fits: boolean;
@@ -20,17 +30,17 @@
         let font: string;
         let canvas: HTMLCanvasElement;
         let fontSize = tileSize;
-        let maxCanvas = document.createElement('canvas');
+        let maxCanvas = newCanvas();
         do {
             font = toFont(fontSize, bold);
             fontSize--;
             context.font = font;
-            let maxTextWidth = Math.ceil(context.measureText(char).width);
+            let maxTextWidth = ceil(context.measureText(char).width);
             let maxTextHeight = tileSize * 2;
             fits = true;
             maxCanvas.width = maxTextWidth;
             maxCanvas.height = maxTextHeight;
-            let maxContext = maxCanvas.getContext('2d');
+            let maxContext = getContext(maxCanvas);
             maxContext.fillStyle = COLOR_WHITE;
             maxContext.font = font;
             maxContext.textBaseline = 'top';
@@ -52,10 +62,10 @@
                     y--;
                     let d = data.data[(y * maxTextWidth + x) * 4 + 3];
                     if (d) {
-                        minx = Math.min(minx, x);
-                        maxx = Math.max(maxx, x);
-                        miny = Math.min(miny, y);
-                        maxy = Math.max(maxy, y);
+                        minx = min(minx, x);
+                        maxx = max(maxx, x);
+                        miny = min(miny, y);
+                        maxy = max(maxy, y);
                     } 
                 }
             }
@@ -80,17 +90,15 @@
                         textWidth = textHeight;
                     }
 
-                    canvas = document.createElement('canvas');
-                    canvas.width = textWidth;
-                    canvas.height = textHeight;
-                    let canvasContext = canvas.getContext('2d');
+                    canvas = newCanvas(textWidth, textHeight);
+                    let canvasContext = getContext(canvas);
                     canvasContext.drawImage(maxCanvas, textOffsetX, textOffsetY);
                 } else {
                     fits = false;
                 }
             } else {
                 // we've got a bad character!
-                return null;
+                return;// null;
             }
 
         } while (!fits);
@@ -98,7 +106,7 @@
         if (!tight) {
             maxCanvas.width = tileSize;
             maxCanvas.height = tileSize;
-            let maxContext = maxCanvas.getContext('2d');
+            let maxContext = getContext(maxCanvas);
             maxContext.fillStyle = COLOR_WHITE;
             maxContext.fillRect(0, 0, tileSize, tileSize);
             canvas = maxCanvas;
@@ -113,50 +121,213 @@
         }
     }
 
+    function claimCharacterAffinity(entityType: IEntityType, childIndex: number): string {
+        // do we already have this affinity?
+        let key = 'c_' + entityType.character;
+        let affinities: string = localStorage.getItem(key);
+        if (affinities) {
+            let c = affinities.charAt(childIndex);
+            if (c != ' ') {
+                return c;
+            }
+        } else {
+            affinities = '';
+            for (let i = 0; i < entityTypeCount; i++) {
+                affinities += ' ';
+            }
+        }
+        let claimedCharactersKey = 'cc';
+        let claimedCharacters = localStorage.getItem(claimedCharactersKey);
+        let c = findBestUnclaimedCharacter(entityType.character, claimedCharacters, '');
+        if (!c) {
+            c = findAnyUnclaimedCharacter(claimedCharacters);
+        }
+        if (c) {
+            affinities = affinities.substr(0, childIndex) + c + affinities.substr(childIndex + 1);
+            localStorage.setItem(key, affinities);
+            claimedCharacters += c;
+            localStorage.setItem(claimedCharactersKey, claimedCharacters);
+        }
+        return c;
+    }
+
+    function findAnyUnclaimedCharacter(claimedCharacters: string) {
+        for (let c in characterAffinities) {
+            if (claimedCharacters.indexOf(c) < 0) {
+                return c;
+            }
+        }
+    }
+
+    function findBestUnclaimedCharacter(to: string, claimedCharacters: string, checked: string): string {
+        if (claimedCharacters.indexOf(to) >= 0) {
+            let nowChecked = checked + to;
+            let check = characterAffinities[to];
+            if (check) {
+                // randomize the order of the check (does not need to be repeatable because the result is stored explicitly?)
+                let randomCheck = '';
+                for (let i = 0; i < check.length; i++) {
+                    let toIndex = floor(random() * randomCheck.length);
+                    randomCheck = randomCheck.substr(0, toIndex) + check.charAt(i) + randomCheck.substr(toIndex);
+                }
+
+                let c: string;
+                let index = 0;
+                while (!c && index < randomCheck.length) {
+                    let toCheck = randomCheck.charAt(index);
+                    if (checked.indexOf(toCheck) < 0) {
+                        c = findBestUnclaimedCharacter(toCheck, claimedCharacters, nowChecked);
+                    }
+                    index++;
+                }
+                return c;
+            }
+            // else return null
+        } else {
+            return to;
+        }
+    }
+
+    function mutate(entityType: IEntityType, count: number, source: number): IEntityType {
+        let result: IEntityType;
+        if (count) {
+            let childSeedAdjust = source & entityTypeMask;
+            let rng = randomNumberGeneratorFactory(entityType.mutationSeed + childSeedAdjust);
+            // TODO check/claim character affinity
+            let mutatedCharacter = claimCharacterAffinity(entityType, childSeedAdjust);
+            if (mutatedCharacter) {
+
+                let speed: number;
+                if (entityType.classification != CLASSIFICATION_WALL) {
+                    if (entityType.sp) {
+                        speed = entityType.sp + rng() * 0.00002;
+                    } else {
+                        speed = 0.001 + rng() * 0.002;
+                    }
+                }
+
+                let mutatedMutationSeed = rng(maxInt);
+                let mutatedEntityType: IEntityType = {
+                    animations: entityType.animations,
+                    bg: entityType.bg,
+                    fg: mutateColor(rng, entityType.fg),
+                    bold: entityType.bold,
+                    outline: entityType.outline,
+                    aggression: entityType.aggression + rng(),
+                    character: mutatedCharacter,
+                    mutationSeed: mutatedMutationSeed,
+                    classification: entityType.classification,
+                    collisionHandlers: [],
+                    cowardliness: entityType.cowardliness * rng(),
+                    dedication: (1 - (1 - entityType.dedication) * rng()),
+                    distractibility: entityType.distractibility * rng(),
+                    flipCost: max(1, entityType.flipCost - rng()),
+                    tileCost: max(1, entityType.tileCost - rng()),
+                    turnCost: max(1, entityType.turnCost - rng()),
+                    visionRange: entityType.visionRange,
+                    parent: entityType,
+                    sp: speed,
+                    hunger: entityType.hunger,
+                    minDecisionTimeoutMillis: entityType.minDecisionTimeoutMillis,
+                    observationTimeoutMillis: entityType.observationTimeoutMillis,
+                    varianceDecisionTimeoutMillis: entityType.varianceDecisionTimeoutMillis
+                }
+                result = mutate(mutatedEntityType, count - 1, source >> entityTypeBits);
+            } else {
+                // we run out of mutations
+                result = entityType;
+            }
+
+        } else {
+            result = entityType;
+        }
+        return result;
+    }
+
     return function (stateKey: ILevelPlayStateKey): IRecord<ILevelPlayState> {
+
+        saveLocationFunction(stateKey.universe.seed, stateKey.x, stateKey.y);
+        let z = loadDepthFunction(stateKey.x, stateKey.y);
+
         // work out the valid entities
-        var levelSeed = stateKey.universe.seed + stateKey.x + stateKey.y * 100000;
+        var levelSeed = stateKey.universe.seed + stateKey.x + stateKey.y * 9999;
         var levelRng = randomNumberGeneratorFactory(levelSeed);
 
-        // do not allow every monster in every level
-        var validEntityTypes: { [_: number]: IEntityType[] } = {};
+        let entitySeed = stateKey.universe.seed + z + stateKey.y * 99 + stateKey.x * 9999;
+        let entityRng = randomNumberGeneratorFactory(entitySeed);
+
+        let classificationCounts: { [_: number]: number } = {};
+        let totalCount = 0;
         for (let classification in classificationRanges) {
             let range = classificationRanges[classification];
             let entityTypes = stateKey.universe.entityTypes[classification];
             if (entityTypes) {
                 let count = range.min + levelRng(range.max - range.min + 1);
-                let copy = entityTypes.concat.apply([], entityTypes);
+                classificationCounts[classification] = count;
+                if (_parseInt(classification) != CLASSIFICATION_WALL) {
+                    totalCount += count;
+                }
+            }
+        }
+
+        let mutationCounts: { [_: number]: number } = {};
+        for (let i = 0; i < z; i++) {
+            let index = entityRng(totalCount);
+            let mutationCount = mutationCounts[index];
+            if (mutationCount) {
+                mutationCount++;
+            } else {
+                mutationCount = 1;
+            }
+            mutationCounts[index] = mutationCount;
+        }
+
+
+        // do not allow every monster in every level
+
+        let entityTypeCount = 0;
+        let validEntityTypes: { [_: number]: IEntityType[] } = {};
+        for (let classification in classificationRanges) {
+            let range = classificationRanges[classification];
+            let entityTypes = stateKey.universe.entityTypes[classification];
+            if (entityTypes) {
+                let count = classificationCounts[classification];
+                // mutate the entity type to the appropriate level
                 let classificationEntityTypes: IEntityType[] = [];
-                while (count > 0 && copy.length) {
+                while (count > 0) {
                     count--;
-                    // TODO look up children too
-                    let index = levelRng(copy.length);
-                    let entityType = copy.splice(index, 1)[0];
+                    let id = levelRng(maxInt);
+                    let index = (id & entityTypeMask) % entityTypes.length;
+                    id = id >> entityTypeBits;
+                    let entityType = entityTypes[index];
+                    let mutations = mutationCounts[entityTypeCount];
+                    entityType = mutate(entityType, mutations, id);
                     classificationEntityTypes.push(entityType);
+                    if (entityType.classification != CLASSIFICATION_WALL) {
+                        entityTypeCount++;
+                    }
                 }
                 validEntityTypes[classification] = classificationEntityTypes;
             }
         }
 
-        var entitySeed = stateKey.universe.seed + stateKey.z + stateKey.y * 100 + stateKey.x * 10000;
-        var entityRng = randomNumberGeneratorFactory(entitySeed);
 
         // calculate the dimensions of the level
         var containerWidth = containerElement.clientWidth;
         var containerHeight = containerElement.clientHeight;
         var containerArea = containerWidth * containerHeight;
-        var tileSize = Math.floor(Math.sqrt(containerArea / minimumAreaTiles));
-        var width = Math.ceil(containerWidth / tileSize);
+        var tileSize = floor(Math.sqrt(containerArea / minimumAreaTiles));
+        var width = ceil(containerWidth / tileSize);
         if (width < minimumDimension) {
             width = minimumDimension;
-            tileSize = Math.ceil(containerWidth / width);
+            tileSize = ceil(containerWidth / width);
             height = containerHeight / tileSize;
         }
-        var height = Math.ceil(containerHeight / tileSize);
+        var height = ceil(containerHeight / tileSize);
         if (height < minimumDimension) {
             height = minimumDimension;
-            tileSize = Math.ceil(containerHeight / height);
-            width = Math.ceil(containerWidth / tileSize);
+            tileSize = ceil(containerHeight / height);
+            width = ceil(containerWidth / tileSize);
         }
 
         let matrix = levelPlayMatrixCreate<ILevelPlayEntityDescription[]>(width, height, function () {
@@ -168,17 +339,17 @@
             canvasElement.height = containerHeight;
         }
 
-        let renderOffsetX = Math.ceil((containerWidth - width * tileSize) / 2);
-        let renderOffsetY = Math.ceil((containerHeight - height * tileSize) / 2);
-        let outlineWidth = Math.max(1, tileSize / 24);
+        let renderOffsetX = ceil((containerWidth - width * tileSize) / 2);
+        let renderOffsetY = ceil((containerHeight - height * tileSize) / 2);
+        let outlineWidth = max(1, tileSize / 24);
 
-        for (let classification = CLASSIFICATION_MIN_INDEX; classification <= CLASSIFICATION_MAX_INDEX; classification++) {
+        for (let classification = CLASSIFICATION_MAX_INDEX; classification >= CLASSIFICATION_MIN_INDEX; classification--) {
             let classificationMatrixPopulators = matrixPopulators[classification];
             let classificationValidEntityTypes = validEntityTypes[classification];
             if (classificationMatrixPopulators && classificationValidEntityTypes) {
                 var matrixPopulatorIndex = levelRng(classificationMatrixPopulators.length);
                 var matrixPopulator = classificationMatrixPopulators[matrixPopulatorIndex];
-                matrixPopulator(stateKey, matrix, classificationValidEntityTypes, stateKey.z, entityRng);
+                matrixPopulator(stateKey, matrix, classificationValidEntityTypes, z, entityRng);
             }
         }
 
@@ -221,7 +392,7 @@
                 let entities = matrix.tiles[pos.x][pos.y];
                 if (!entities.length) {
                     let playerDescription = stateKey.players[playerIndex];
-                    let playerMind = <ILevelPlayEntityMindPlayer>playerDescription.mind.value;
+                    let playerMind = <ILevelPlayEntityMindPlayer>playerDescription.mind.v;
                     // don't walk straight out
                     playerMind.desiredDirection = null;
 
@@ -248,18 +419,18 @@
                 let tile = matrix.tiles[tx][ty];
                 for (let description of tile) {
 
-                    var entityType = description.type;
+                    var entityType = description.t;
 
                     let padding: number;
-                    if (entityType.backgroundColor != null) {
+                    if (entityType.bg != null) {
                         padding = 0;
                     } else {
-                        padding = Math.ceil(tileSize / 5);
+                        padding = ceil(tileSize / 5);
                     }
                     let fitResult = fit(
                         entityType.character,
                         tileSize,
-                        entityType.backgroundColor == null,
+                        entityType.bg == null,
                         entityType.bold,
                         entityType.outline?outlineWidth:0,
                         padding,
@@ -271,51 +442,49 @@
                     let entityWidth = textWidth;
                     let entityHeight = textHeight;
 
-                    let render = document.createElement('canvas');
-                    render.width = entityWidth;
-                    render.height = entityHeight;
-                    let renderContext = render.getContext('2d');
+                    let render = newCanvas(entityWidth, entityHeight);
+                    let renderContext = getContext(render);
                     renderContext.font = fitResult.font;
                     renderContext.textBaseline = 'top';
 
                     let foregroundColor: string | CanvasGradient;
-                    if (entityType.foregroundColor.length > 1) {
+                    if (entityType.fg.length > 1) {
 
                         //let gradient = renderContext.createLinearGradient(textWidth, 0, 0, textHeight);
                         let gx = textWidth * 0.8;
                         let gy = textHeight * 0.2;
-                        let r = Math.max(textWidth, textHeight) * 0.8;
+                        let r = max(textWidth, textHeight) * 0.8;
                         let gradient = renderContext.createRadialGradient(gx, gy, r / 5, gx, gy, r);  
-                        gradient.addColorStop(0, entityType.foregroundColor[entityType.foregroundColor.length - 1]);
-                        gradient.addColorStop(1, entityType.foregroundColor[1]);
+                        gradient.addColorStop(0, entityType.fg[entityType.fg.length - 1]);
+                        gradient.addColorStop(1, entityType.fg[1]);
                         foregroundColor = gradient;
                     } else {
-                        foregroundColor = entityType.foregroundColor[0];
+                        foregroundColor = entityType.fg[0];
                     }
 
                     let entity: ILevelPlayEntity = {
-                        description: description,
+                        d: description,
                         x: tx * tileSize + (tileSize - textWidth) / 2,
                         y: ty * tileSize + (tileSize - textHeight) / 2,
-                        width: entityWidth,
-                        height: entityHeight,
-                        orientation: ORIENTATION_FACING_RIGHT_FEET_DOWN,
-                        rotation: 0,
-                        offsetX: fitResult.textOffsetX,
-                        offsetY: fitResult.textOffsetY,
+                        w: entityWidth,
+                        h: entityHeight,
+                        o: ORIENTATION_FACING_RIGHT_FEET_DOWN,
+                        r: 0,
+                        offx: fitResult.textOffsetX,
+                        offy: fitResult.textOffsetY,
                         font: fitResult.font,
                         renderMask: renderMask,
                         render: render,
                         renderContext: renderContext,
                         foregroundFill: foregroundColor,
-                        velocityX: 0,
-                        velocityY: 0,
-                        animations: {},
+                        vx: 0,
+                        vy: 0,
+                        anims: {},
                         state: ENTITY_STATE_IDLE
                     };
                     if (description.initialOrientation) {
                         levelPlayEntityRotateRenderMask(entity, ORIENTATION_FACING_RIGHT_FEET_DOWN, description.initialOrientation);
-                        entity.orientation = description.initialOrientation;
+                        entity.o = description.initialOrientation;
                     }
                     entities.push(entity);
                     levelPlayEntityMatrixAdd(entityMatrix, tileSize, entity);
@@ -323,10 +492,8 @@
             }
         }
 
-        let previousCanvas = document.createElement('canvas');
-        previousCanvas.width = containerWidth;
-        previousCanvas.height = containerHeight;
-        let previousContext = previousCanvas.getContext('2d');
+        let previousCanvas = newCanvas(containerWidth, containerHeight);
+        let previousContext = getContext(previousCanvas);
         previousContext.drawImage(canvasElement, 0, 0);
         
         let tween: ITween;
@@ -334,13 +501,13 @@
             tween = {
                 durationMillis: 500,
                 easing: {
-                    type: EASING_QUADRATIC_OUT
+                    t: EASING_QUADRATIC_OUT
                 },
                 effect: {
-                    type: EFFECT_SLIDE_IN,
-                    value: {
+                    t: EFFECT_SLIDE_IN,
+                    v: {
                         slideOutRenderer: recordContextEffectRenderCanvasFactory(previousCanvas),
-                        direction: stateKey.playerEntryPoint
+                        d: stateKey.playerEntryPoint
                     }
                 }
             };
@@ -362,75 +529,69 @@
             cx: number, 
             cy: number, 
             colors: string[], 
-            quantity: number
+            quantity: number, 
+            baseVelocityX: number, 
+            baseVelocityY: number
         ): ILevelPlayEntity[] {
             let results: ILevelPlayEntity[] = [];
 
             while (quantity) {
                 quantity--;
 
-                let angle = Math.random() * Math.PI;
-                let velocity = particleType.speed / 2 + particleType.speed * Math.random();
+
+                let angle = random() * -pi;
+                let velocity = particleType.sp / 2 + particleType.sp * random();
                 let velocityX = Math.cos(angle) * velocity;
-                let velocityY = -Math.sin(angle) * velocity;
+                let velocityY = sin(angle) * velocity;
 
-                let color = colors[levelRng(colors.length)];
+                let minColor = floor(colors.length / 2);
+                let colorRange = colors.length - minColor + 1;
+                let colorIndex = minColor + levelRng(colorRange);
+                let color: string;
+                if (colorIndex >= colors.length) {
+                    color = COLOR_WHITE;
+                } else {
+                    color = colors[colorIndex];
+                }
 
-                let canvas = document.createElement('canvas');
-                canvas.width = particleSize;
-                canvas.height = particleSize;
-                let context = canvas.getContext('2d');
+                let canvas = newCanvas(particleSize, particleSize);
+                let context = getContext(canvas);
                 context.fillStyle = color;
                 context.fillRect(0, 0, particleSize, particleSize);
 
-                let render = document.createElement('canvas');
-                render.width = particleSize;
-                render.height = particleSize;
-                let renderContext = render.getContext('2d');
+                let render = newCanvas(particleSize, particleSize);
+                let renderContext = getContext(render);
 
                 let particleMind: IRecord<LevelPlayEntityMind> = {
-                    type: MIND_PARTICLE, 
-                    value: {
-                    }
+                    t: MIND_INERT
                 };
 
-                let animation: IRecord<Animation> = {
-                    type: ANIMATION_TYPE_FADE, 
-                    value: {
-                        durationMillis: 999, 
-                        startAlpha: 1, 
-                        dAlpha: -1
-                    }
-                };
                 let animations: { [_: number]: ILevelPlayEntityAnimation } = {
-                };
-                animations[ENTITY_ANIMATION_TEMP] = {
-                    tweens: recordAnimationTweenFactory(animation, particleSize, particleSize), 
-                    age: 0
                 };
 
                 let particle: ILevelPlayEntity = {
                     x: cx - particleSize / 2,
                     y: cy - particleSize / 2,
-                    width: particleSize,
-                    height: particleSize,
-                    velocityX: velocityX, 
-                    velocityY: velocityY, 
+                    w: particleSize,
+                    h: particleSize,
+                    vx: velocityX + baseVelocityX,
+                    vy: velocityY + baseVelocityY, 
                     render: render, 
                     renderContext: renderContext,
                     renderMask: canvas,
                     foregroundFill: color,
-                    offsetX: particleSize / 2,
-                    offsetY: particleSize / 2, 
-                    description: {
-                        type: particleType, 
-                        mind: particleMind
+                    offx: particleSize / 2,
+                    offy: particleSize / 2, 
+                    d: {
+                        t: particleType, 
+                        mind: particleMind,
+                        side: SIDE_NEUTRAL
                     },
-                    orientation: ORIENTATION_FACING_RIGHT_FEET_DOWN, 
+                    o: ORIENTATION_FACING_RIGHT_FEET_DOWN, 
                     font: null,
-                    rotation: 0,
-                    state: ENTITY_STATE_DYING, 
-                    animations: animations, 
+                    r: 0,
+                    state: ENTITY_STATE_DYING,
+                    anims: animations, 
                     gravity: true                    
                 };
                 results.push(particle);
@@ -440,13 +601,14 @@
         }
 
         return {
-            type: STATE_LEVEL_PLAY,
-            value: {
+            t: STATE_LEVEL_PLAY,
+            v: {
                 key: stateKey,
+                z: z,
                 renderOffsetX: renderOffsetX, 
                 renderOffsetY: renderOffsetY,
-                outlineWidth: outlineWidth,
-                entities: entities,
+                ow: outlineWidth,
+                es: entities,
                 matrix: entityMatrix,
                 entityTypeDecisionCaches: {},
                 width: width, 
@@ -455,11 +617,12 @@
                 rng: entityRng,
                 ageMillis: 0,
                 tween: tween,
-                levelName: toStringWithSign(stateKey.x) + toStringWithSign(stateKey.y) + toStringWithSign(stateKey.z),
+                levelName: toStringWithSign(stateKey.x) + toStringWithSign(stateKey.y) + toStringWithSign(z),
                 levelFont: toFont(tileSize * 2, true, 'monospace'),
                 levelColors: levelColors,
                 levelBackground: levelBackground,
-                particleFactory: particleFactory
+                particleFactory: particleFactory, 
+                energy: 0
             }
         }
     }

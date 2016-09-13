@@ -1,5 +1,6 @@
 ﻿interface ILevelPlayEntityDescription {
     mind: IRecord<LevelPlayEntityMind>;
-    type: IEntityType;
+    t: IEntityType;
     initialOrientation?: Orientation;
+    side: Side;
 }

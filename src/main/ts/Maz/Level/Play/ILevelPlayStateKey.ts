@@ -2,7 +2,6 @@
     universe: IUniverse,
     x: number,
     y: number,
-    z: number,
     players: ILevelPlayEntityDescription[], 
     playerEntryPoint?: Direction,
     suppressScroll?: boolean

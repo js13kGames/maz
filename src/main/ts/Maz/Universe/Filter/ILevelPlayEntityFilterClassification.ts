@@ -1,0 +1,3 @@
+﻿interface ILevelPlayEntityFilterClassification {
+    classifications: Classification[];
+}

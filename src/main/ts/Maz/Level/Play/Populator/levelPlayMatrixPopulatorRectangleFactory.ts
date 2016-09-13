@@ -1,4 +1,4 @@
-﻿function levelPlayMatrixPopulatorRectangleFactory(maxAttempts: number, crush: boolean, crushSwitchChance: number, modMin: boolean): ILevelPlayMatrixPopulator {
+﻿function levelPlayMatrixPopulatorRectangleFactory(maxAttempts: number, crush: boolean, crushSwitchChance: number, modMin: boolean, side: Side): ILevelPlayMatrixPopulator {
 
     var deltas = [
         {
@@ -89,6 +89,7 @@
         let done = false;
         while (!done && minBlockWidth > 0 && minBlockHeight > 0) {
             let attempts = 0;
+            let count = 0;
             while (attempts < maxAttempts && !done) {
                 // TODO not all blocks need to be off the perimeter...
                 var width = minBlockWidth + rng(rangeBlockWidth);
@@ -100,29 +101,30 @@
                     y -= y % minBlockHeight;
                     if (rng() > 0.5) {
                         x += rng((matrix.width - 1) % (minBlockWidth + 1));
-                        width = Math.min(width, matrix.width - x - 2);
+                        width = min(width, matrix.width - x - 2);
                     }
                     if (rng() > 0.5) {
                         y += rng((matrix.height - 1) % (minBlockHeight + 1));
-                        height = Math.min(height, matrix.height - y - 2);
+                        height = min(height, matrix.height - y - 2);
                     }
                 }
                 x++;
                 y++;
                 var valid = x > 0 && y > 0 && isRectangleValid(x, y, width, height);
                 if (valid) {
-                    var entityTypeIndex = rng(validEntityTypes.length);
-                    var entityType = validEntityTypes[entityTypeIndex];
+                    var entityTypeFunction = levelPlayMatrixPopulatorGetBestEntityType(validEntityTypes, count, difficulty, rng);
+                    count++;
                     for (var xi = x + width; xi > x;) {
                         xi--;
                         for (var yi = y + height; yi > y;) {
                             yi--;
                             matrix.tiles[xi][yi].push({
-                                type: entityType,
+                                t: entityTypeFunction(),
                                 mind: {
-                                    type: MIND_MONSTER,
-                                    value: {}
-                                }
+                                    t: MIND_MONSTER,
+                                    v: {}
+                                }, 
+                                side: side
                             });
                         }
                     }

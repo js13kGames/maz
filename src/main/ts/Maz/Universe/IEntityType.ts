@@ -2,15 +2,15 @@
     character: string;
     bold?: boolean;
     outline?: boolean;
-    backgroundColor?: string;
-    foregroundColor?: string[];
+    bg?: string;
+    fg?: string[];
     parent?: IEntityType;
-    children: IEntityType[];
     classification: Classification;
     animations: { [_: number]: IRecord<Animation> };
+    mutationSeed?: number;
 
     // physical metrics
-    speed: number;
+    sp: number;
     observationTimeoutMillis: number;
     minDecisionTimeoutMillis: number;
     varianceDecisionTimeoutMillis: number;

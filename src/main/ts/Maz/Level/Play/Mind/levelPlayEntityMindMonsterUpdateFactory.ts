@@ -21,13 +21,13 @@
         let todos: {
             tx: number, 
             ty: number,
-            direction: Direction, 
+            d: Direction, 
             cumulativeCost: number,
             cumulativeDanger: number
         }[] = [{
             tx: startTx, 
             ty: startTy,
-            direction: startDirection, 
+            d: startDirection, 
             cumulativeCost: startCost,
             cumulativeDanger: startDanger
             }];
@@ -49,18 +49,18 @@
                 let cumulativeDanger = todo.cumulativeDanger;
                 let danger = cumulativeDanger + rawDanger * Math.pow(entityType.cowardliness, cost);
                 monsterTile.danger = danger;
-                let direction = todo.direction;
+                let direction = todo.d;
                 monsterTile.entryDirection = direction;
                 let testBestPointValue = desirability - danger;
                 if ((tx != startTx || ty != startTy) && (bestPointValue == null || testBestPointValue > bestPointValue)) {
                     bestPointValue = testBestPointValue;
                 }
                 for (let nextDirectionIndex in POINT_DIRECTIONS_CARDINAL) {
-                    let nextDirection = parseInt(nextDirectionIndex) + 1;
+                    let nextDirection = _parseInt(nextDirectionIndex) + 1;
                     let offset = POINT_DIRECTIONS_CARDINAL[nextDirectionIndex];
                     let nextTx = tx + offset.x;
                     let nextTy = ty + offset.y;
-                    if (nextTx >= bounds.x && nextTx < bounds.x + bounds.width && nextTy >= bounds.y && nextTy < bounds.y + bounds.height) {
+                    if (nextTx >= bounds.x && nextTx < bounds.x + bounds.w && nextTy >= bounds.y && nextTy < bounds.y + bounds.h) {
                         let nextCost = cost;
                         if ((nextDirection + direction - 2) % 2) {
                             // turning left or right
@@ -74,7 +74,7 @@
                             ty: nextTy, 
                             cumulativeCost: nextCost,
                             cumulativeDanger: danger,
-                            direction: nextDirection
+                            d: nextDirection
                         });
                         /*
                         let checkPointValue = populateDecisionMatrix(
@@ -119,25 +119,25 @@
 
     return function (mind: ILevelPlayEntityMindMonster, state: ILevelPlayState, entity: ILevelPlayEntity): ILevelPlayEntityMindUpdateResult {
         let result: ILevelPlayEntityMindUpdateResult = {};
-        let entityType = entity.description.type;
+        let entityType = entity.d.t;
 
-        let entityCX = entity.x + entity.width / 2;
-        let entityCY = entity.y + entity.height / 2;
-        let currentTileX = Math.floor(entityCX / state.tileSize);
-        let currentTileY = Math.floor(entityCY / state.tileSize);
+        let entityCX = entity.x + entity.w / 2;
+        let entityCY = entity.y + entity.h / 2;
+        let currentTileX = floor(entityCX / state.tileSize);
+        let currentTileY = floor(entityCY / state.tileSize);
         if (currentTileX >= 0 && currentTileY >= 0 && currentTileX < state.width && currentTileY < state.height) {
 
-            if (entity.velocityX || entity.velocityY) {
+            if (entity.vx || entity.vy) {
                 result.newEntityState = ENTITY_STATE_MOVING;
             } else {
                 result.newEntityState = ENTITY_STATE_IDLE;
             }
 
-            let decide = entity.description.type.speed && (!mind.lastDecisionPath || !mind.lastDecisionPath.length || mind.nextDecisionAgeMillis < state.ageMillis);
+            let decide = entity.d.t.sp && (!mind.lastDecisionPath || !mind.lastDecisionPath.length || mind.nextDecisionAgeMillis < state.ageMillis);
             if (decide) {
                 // work out the desirability of each tile for the entity type
                 let update: boolean;
-                let decisionCache = state.entityTypeDecisionCaches[entity.description.type.character];
+                let decisionCache = state.entityTypeDecisionCaches[entity.d.t.character];
                 if (!decisionCache) {
                     let decisionMatrix = levelPlayMatrixCreate(state.width, state.height, function () {
                         return {}
@@ -145,10 +145,10 @@
                     decisionCache = {
                         decisionMatrix: decisionMatrix
                     }
-                    state.entityTypeDecisionCaches[entity.description.type.character] = decisionCache;
+                    state.entityTypeDecisionCaches[entity.d.t.character] = decisionCache;
                     update = true;
                 } else {
-                    update = state.ageMillis - decisionCache.updatedAtAgeMillis > entity.description.type.observationTimeoutMillis;
+                    update = state.ageMillis - decisionCache.updatedAtAgeMillis > entity.d.t.observationTimeoutMillis;
                 }
                 if (update) {
 
@@ -158,35 +158,37 @@
                         let danger = 0;
                         let costToTraverse = 0;
                         for (let tileEntity of tileEntities) {
-                            let tileEntityType = tileEntity.description.type;
-                            let cx = tileEntity.x + tileEntity.width / 2;
-                            let cy = tileEntity.y + tileEntity.height / 2;
-                            let tx = Math.floor(cx / state.tileSize);
-                            let ty = Math.floor(cy / state.tileSize);
-                            let entityCollisionResult = collisionHandlerSearch(entityType, tileEntityType);
-                            if (entityCollisionResult) {
-                                if (tx == x && ty == y) {
-                                    // calculate desirability of us doing this thing
-                                    let collisionResultDesirability = desirabilityCollisionResolutionValueFunction(entityCollisionResult, state, entityType, tileEntityType);
-                                    if (collisionResultDesirability > 0) {
-                                        desirability += collisionResultDesirability;
-                                    } else {
-                                        danger -= collisionResultDesirability;
+                            if (tileEntity != entity) {
+                                let tileEntityType = tileEntity.d.t;
+                                let cx = tileEntity.x + tileEntity.w / 2;
+                                let cy = tileEntity.y + tileEntity.h / 2;
+                                let tx = floor(cx / state.tileSize);
+                                let ty = floor(cy / state.tileSize);
+                                let entityCollisionResult = collisionHandlerSearch(entity, tileEntity);
+                                if (entityCollisionResult) {
+                                    if (tx == x && ty == y) {
+                                        // calculate desirability of us doing this thing
+                                        let collisionResultDesirability = desirabilityCollisionResolutionValueFunction(entityCollisionResult, state, entityType, tileEntityType);
+                                        if (collisionResultDesirability > 0) {
+                                            desirability += collisionResultDesirability;
+                                        } else {
+                                            danger -= collisionResultDesirability;
+                                        }
                                     }
+                                    costToTraverse += costCollisionResolutionValueFunction(entityCollisionResult, state, entityType, tileEntityType);
                                 }
-                                costToTraverse += costCollisionResolutionValueFunction(entityCollisionResult, state, entityType, tileEntityType);
-                            }
-                            if (tx == x && ty == y) {
-                                // assume that the cost is not relevant for things that happen to us, only desirability
-                                let entityTileCollisionResult = collisionHandlerSearch(tileEntityType, entityType);
-                                if (entityTileCollisionResult) {
-                                    // calculate the desirability of this thing happening to us 
-                                    // reverse handler for desirability...
-                                    let collisionResultDesirability = inverseDesirabilityCollisionResolutionValueFunction(entityTileCollisionResult, state, entityType, tileEntityType);
-                                    if (collisionResultDesirability > 0) {
-                                        desirability += collisionResultDesirability;
-                                    } else {
-                                        danger -= collisionResultDesirability;
+                                if (tx == x && ty == y) {
+                                    // assume that the cost is not relevant for things that happen to us, only desirability
+                                    let entityTileCollisionResult = collisionHandlerSearch(tileEntity, entity);
+                                    if (entityTileCollisionResult) {
+                                        // calculate the desirability of this thing happening to us 
+                                        // reverse handler for desirability...
+                                        let collisionResultDesirability = inverseDesirabilityCollisionResolutionValueFunction(entityTileCollisionResult, state, entityType, tileEntityType);
+                                        if (collisionResultDesirability > 0) {
+                                            desirability += collisionResultDesirability;
+                                        } else {
+                                            danger -= collisionResultDesirability;
+                                        }
                                     }
                                 }
                             }
@@ -209,13 +211,13 @@
                 } else {
                     levelPlayMatrixIterateAll(mind.decisionMatrix, resetFunction);
                 }
-                let boundsX = Math.max(0, currentTileX - entityType.visionRange);
-                let boundsY = Math.max(0, currentTileY - entityType.visionRange);
+                let boundsX = max(0, currentTileX - entityType.visionRange);
+                let boundsY = max(0, currentTileY - entityType.visionRange);
                 let bounds: IRectangle = {
                     x: boundsX,
                     y: boundsY,
-                    width: Math.min(state.width - boundsX, entityType.visionRange * 2),
-                    height: Math.min(state.height - boundsY, entityType.visionRange * 2)
+                    w: min(state.width - boundsX, entityType.visionRange * 2),
+                    h: min(state.height - boundsY, entityType.visionRange * 2)
                 };
                 let bestValue = populateDecisionMatrix(
                     entityType,
@@ -226,7 +228,7 @@
                     currentTileX,
                     currentTileY,
                     // turn the orientation into a direction using bitwise operation
-                    entity.orientation & 0x7,
+                    entity.o & 0x7,
                     1,
                     0
                 );
@@ -252,7 +254,7 @@
                     );
 
                     mind.lastDecisionPath = path;
-                    mind.nextDecisionAgeMillis = state.ageMillis + entity.description.type.minDecisionTimeoutMillis + state.rng(entity.description.type.varianceDecisionTimeoutMillis);
+                    mind.nextDecisionAgeMillis = state.ageMillis + entity.d.t.minDecisionTimeoutMillis + state.rng(entity.d.t.varianceDecisionTimeoutMillis);
                 }
             }
 
@@ -267,8 +269,8 @@
                     let centerMargin = tileCenterFraction * state.tileSize;
                     let dx = (entityCX % state.tileSize) - state.tileSize / 2;
                     let dy = (entityCY % state.tileSize) - state.tileSize / 2;
-                    let absdx = Math.abs(dx);
-                    let absdy = Math.abs(dy);
+                    let absdx = abs(dx);
+                    let absdy = abs(dy);
                     if (nextTile.x != currentTileX || nextTile.y != currentTileY || absdx > centerMargin || absdy > centerMargin) {
                         if (dtx == 0) {
                             if (absdx > centerMargin) {

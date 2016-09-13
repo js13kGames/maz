@@ -1,1 +1,1 @@
-﻿type CollisionResolution = void;
+﻿type CollisionResolution = void | ICollisionResolutionConferEntityState;

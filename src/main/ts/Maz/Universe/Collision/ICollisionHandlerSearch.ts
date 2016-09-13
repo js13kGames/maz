@@ -1,3 +1,3 @@
 ﻿interface ICollisionHandlerSearch {
-    (from: IEntityType, withEntityType: IEntityType): IRecord<CollisionResolution>;
+    (from: ILevelPlayEntity, withEntity: ILevelPlayEntity): IRecord<CollisionResolution>;
 }

@@ -1,5 +1,5 @@
 ﻿interface IRecord<V> {
 
-    type: number;
-    value?: V;
+    t: number;
+    v?: V;
 }

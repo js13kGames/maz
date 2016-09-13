@@ -1,4 +1,4 @@
 ﻿interface ICollisionHandler {
-    filters: IRecord<EntityTypeFilter>[];
+    filters: IRecord<LevelPlayEntityFilter>[];
     collisionResolution: IRecord<CollisionResolution>;
 }

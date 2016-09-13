@@ -1,0 +1,1 @@
+﻿let _parseInt = parseInt;

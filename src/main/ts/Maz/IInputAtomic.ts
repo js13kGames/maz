@@ -1,4 +1,5 @@
 ﻿interface IInputAtomic {
     unread?: boolean;
-    active?: boolean;
+    a?: boolean;
+    t?: number;
 }

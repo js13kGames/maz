@@ -2,12 +2,12 @@
     if (toOrientation != fromOrientation) {
         let fromOrientationTransformation = ORIENTATION_TRANSFORMATIONS[fromOrientation];
         let toOrientationTransformation = ORIENTATION_TRANSFORMATIONS[toOrientation];
-        let fromCount = (4 - fromOrientationTransformation.rotate) % 4;
+        let fromCount = (4 - fromOrientationTransformation.r) % 4;
         rotate(entity, fromCount);
         if (fromOrientationTransformation.flipY && !toOrientationTransformation.flipY || !fromOrientationTransformation.flipY && toOrientationTransformation.flipY) {
             flipY(entity);
         }
-        rotate(entity, toOrientationTransformation.rotate);
+        rotate(entity, toOrientationTransformation.r);
     }
 }
 
@@ -16,10 +16,10 @@ function rotate(entity: ILevelPlayEntity, count: number) {
         count--;
         let width = entity.renderMask.width;
         let height = entity.renderMask.height;
-        let originalData = entity.renderMask.getContext('2d').getImageData(0, 0, width, height);
+        let originalData = getContext(entity.renderMask).getImageData(0, 0, width, height);
         entity.renderMask.width = height;
         entity.renderMask.height = width;
-        let context = entity.renderMask.getContext('2d');
+        let context = getContext(entity.renderMask);
         let newData = context.getImageData(0, 0, height, width);
         for (let y = 0; y < height; y++) {
             let originalYoff = y * width * 4;
@@ -41,9 +41,9 @@ function rotate(entity: ILevelPlayEntity, count: number) {
 function flipY(entity: ILevelPlayEntity) {
     let width = entity.renderMask.width;
     let height = entity.renderMask.height;
-    let context = entity.renderMask.getContext('2d');
+    let context = getContext(entity.renderMask);
     let data = context.getImageData(0, 0, width, height);
-    let midY = Math.floor(height / 2);
+    let midY = floor(height / 2);
     for (let y = 0; y < midY; y++) {
         let newY = height - y - 1;
         if (newY != y) {

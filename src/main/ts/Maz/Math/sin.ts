@@ -1,0 +1,1 @@
+﻿let sin = Math.sin;
